@@ -52,32 +52,3 @@ for i in range(len(fileList)):
 
         output_filename = file_name.stem + "_cg.jpg"
         cv2.imwrite(str(output_path / output_filename), img_ssize_dst) 
-
-        # 厚塗り成分 B - A の計算
-        thick_coat = np.array(img_ssize_dst, dtype = np.float32) - np.array(img_src, dtype = np.float32)
-        tc_out = np.clip(thick_coat, 0, 255)
-        tc_out = tc_out.astype(np.uint8)
-        print(np.count_nonzero(tc_out < 0)) # B - A < 0 となる面積のカウント
-        print(np.mean(tc_out)) # 厚塗り成分の平均値
-        tc_gray = cv2.cvtColor(tc_out, cv2.COLOR_BGR2GRAY) # 厚塗り成分のグレー化
-
-        output_filename = file_name.stem + "_tc_0prd.jpg"
-        cv2.imwrite(str(output_path / output_filename), tc_out)
-        output_filename = file_name.stem + "_tc_1gray.jpg"
-        cv2.imwrite(str(output_path / output_filename), tc_gray)
-
-        tc_val = cv2.cvtColor(tc_gray, cv2.COLOR_GRAY2BGR)
-        add_tc = np.array(img_src, dtype = np.float32) + np.array(tc_val, dtype = np.float32) * 0.3333
-        add_tc = np.clip(add_tc, 0, 255)
-        img_add_tc = add_tc.astype(np.uint8)
-
-        output_filename = file_name.stem + "_tc_2clc.jpg"
-        cv2.imwrite(str(output_path / output_filename), img_add_tc) 
-
-        tc_mean = np.zeros((i_h, i_w, 3), np.uint8)
-        tc_mean[::] = int(np.mean(tc_out))
-        img_add_mean_tcval = np.array(img_src, dtype = np.float32) + np.array(tc_mean, dtype = np.float32)
-        img_add_mean_tcval = np.clip(img_add_mean_tcval, 0, 255)
-        img_add_mean_tcval = img_add_mean_tcval.astype(np.uint8)
-        output_filename = file_name.stem + "_tc_3mval.jpg"
-        cv2.imwrite(str(output_path / output_filename), img_add_mean_tcval) 

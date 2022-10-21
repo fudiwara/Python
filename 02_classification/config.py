@@ -49,11 +49,6 @@ class build_model(nn.Module):
         output = self.classifier(x)
         return output
 
-# def build_model():
-#     model = models.resnet50(pretrained = True)
-#     model.fc = nn.Linear(model.fc.in_features, classesSize) # GovalAvgPooling
-#     return model
-
 if __name__ == "__main__":
     mdl = build_model()
     print(mdl)

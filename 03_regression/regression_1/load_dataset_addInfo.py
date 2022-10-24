@@ -19,13 +19,10 @@ class ImageFolder_reg1(Dataset):
         img = Image.open(path).convert("RGB") # 画像読み込み
         img = self.transform(img)
 
-        # print(str(path))
         fname_prt = path.stem.split("_")
         # print(fname_prt)
-        # age_val = self.ftf(int(fname_prt[cf.sep_val]))
-        # print(int(fname_prt[cf.sep_val]))
         reg_val = float(fname_prt[cf.sep_val]) / cf.val_rate
-        out_val = torch.tensor(reg_val)
+        out_val = torch.tensor([reg_val]) # 学習時の処理を考えて配列の中に数値を入れる
 
         return img, out_val
 

@@ -19,7 +19,7 @@ else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 
 # データの読み込み (バッチサイズは適宜変更する)
-data_transforms = T.Compose([T.Resize(cf.cellSize), T.ToTensor()])
+data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cellSize), T.ToTensor()])
 test_data = ld.ImageFolder_reg1(dataset_path, data_transforms) # データの読み込み
 test_loader = DataLoader(test_data, batch_size = 20, num_workers = os.cpu_count())
 
@@ -29,12 +29,9 @@ for i, (data, label) in enumerate(test_loader):
     label = label.numpy().tolist()
     outputs = model(data)
     # print(label, outputs)
-    # pred = outputs.to('cpu').detach().numpy().tolist()
     out_view = outputs.view(-1, outputs.shape[0])
     out_view = out_view.squeeze()
     pred = out_view.to('cpu').detach().numpy().tolist()
-    # pred 
-    # print(pred)
     label_list += label
     pred_list += pred
 
@@ -52,8 +49,6 @@ for i in range(len(label_list)):
     val_abs_dist.append(abs(dist_age))
 
     f.write("%f,%f\n" % (val_gt_list[i], val_es_list[i]))
-
-    
     # print("%.0f %.2f %.0f" % (val_gt_list[i], val_es_list[i], abs(dist_age)))
 
 val_abs_dist = np.array(val_abs_dist)

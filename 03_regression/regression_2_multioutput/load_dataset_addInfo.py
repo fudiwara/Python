@@ -6,38 +6,58 @@ import torch
 import torchvision.transforms as T
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
+import numpy as np
 import config as cf
+
+def genGridMask(src_pil):
+    if 0.8 < np.random.uniform(): return src_pil # この割合で動作する
+    p_mask = 0.8 # グリッド内でマスクされない割合
+    r_rate = 0.6
+
+    src = np.array(src_pil, dtype=np.uint8)
+    if src.shape[0] < src.shape[1] : side = src.shape[0]
+    else: side = src.shape[1]
+
+    d = np.random.randint(side // 7, side)
+    r = int(r_rate * d)
+    start_rx, start_ry = np.random.randint(0, r), np.random.randint(0, r)
+
+    mask = np.ones((src.shape[0]+d, src.shape[1]+d, 3), dtype=np.uint8)
+    for i in range(start_ry, src.shape[0]+d, d):
+        for j in range(start_rx, src.shape[1]+d, d):
+            if p_mask < np.random.uniform():
+                mask[i: i+(d-r), j: j+(d-r)] = 0
+
+    mask = mask[:src.shape[0], :src.shape[1]]
+    dst = src * mask
+
+    dst_pil = Image.fromarray(dst) # ここまでnp形式だったのでPILに戻す
+    return dst_pil
 
 class ImageFolder_reg2(Dataset):
     def __init__(self, img_dir, transform = None): # 画像ファイルのパス一覧
         self.img_paths = self._get_img_paths(img_dir)
         self.transform = transform
-        self.ftf = T.Compose([T.ToTensor()])
 
     def __getitem__(self, idx):
         path = self.img_paths[idx]
         img = Image.open(path).convert("RGB") # 画像読み込み
+        # img = genGridMask(img)
         img = self.transform(img)
 
         # print(str(path))
         fname_prt = path.stem.split("_")
-        # print(fname_prt)
-        # age_val = self.ftf(int(fname_prt[cf.sep_val]))
-        # print(int(fname_prt[cf.sep_val]))
         reg_val_0 = float(fname_prt[cf.sep_val_0]) / cf.val_rate_0
-        out_val_0 = torch.tensor(reg_val_0)
+        out_val_0 = torch.tensor([reg_val_0]) # 学習時の処理を考えて配列の中に数値を入れる
 
         reg_val_1 = float(fname_prt[cf.sep_val_1]) / cf.val_rate_1
-        out_val_1 = torch.tensor(reg_val_1)
+        out_val_1 = torch.tensor([reg_val_1]) # 学習時の処理を考えて配列の中に数値を入れる
 
         return img, out_val_0, out_val_1
 
     def _get_img_paths(self, img_dir): # 指定ディレクトリ内の画像ファイルパス一覧
-        # img_dir = pathlib.Path(img_dir)
-        # img_paths = [p for p in img_dir.iterdir() if p.suffix in ImageFolder_reg1.IMG_EXT]
-
         fileList = list(pathlib.Path(img_dir).iterdir())
-        # fileList.sort()
+        # fileList.sort() 連番に処理したい場合はいれておく
         i_p = []
         for i in range(len(fileList)):
             if fileList[i].is_file() and (fileList[i].suffix in cf.ext):

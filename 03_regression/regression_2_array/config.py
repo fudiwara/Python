@@ -12,19 +12,22 @@ import numpy as np
 sep_num = 4
 
 # ファイル名を _ で分割したN番目を教師データとして使うか (前から0・後ろから-1)
-sep_val = 0
+sep_val_0 = 0
+sep_val_1 = 1
 
 # 学習時の値に正規化するための係数
-val_rate = 150
+val_rate_0 = 150
+val_rate_1 = 2
 
 # 読み込み対象の画像拡張子
 ext = [".jpg", ".jpeg", ".png", ".bmp", ".JPG", ".JPEG", ".PNG", ".BMP"]
 
 # 画像の一辺のサイズ (この大きさにリサイズされるので要確認)
-cellSize = 200
+# cellSize = 200
+cellSize = 224
 
 # 繰り返す回数
-epochSize = 20
+epochSize = 15
 
 # 学習するときの小さいセットの数：元のデータ数によるが早く終わらせたい場合は100以上とかもあり
 batchSize = 50
@@ -34,11 +37,12 @@ splitRateTrain = 0.8
 
 # データ変換
 data_transforms = T.Compose([
-    T.Resize(int(cellSize * 1.2)),
-    T.RandomRotation(degrees = 15),
-    T.RandomApply([T.GaussianBlur(5, sigma = (0.1, 5.0))], p = 0.5),
-    T.ColorJitter(brightness = 0, contrast = 0, saturation = 0, hue = [-0.2, 0.2]),
-    T.RandomHorizontalFlip(0.5),
+    T.Resize(int(cellSize)),
+    # T.Resize(int(cellSize * 1.2)),
+    # T.RandomRotation(degrees = 15),
+    # T.RandomApply([T.GaussianBlur(5, sigma = (0.1, 5.0))], p = 0.5),
+    # T.ColorJitter(brightness = 0, contrast = 0, saturation = 0, hue = [-0.2, 0.2]),
+    # T.RandomHorizontalFlip(0.5),
     T.CenterCrop(cellSize),
     T.ToTensor()])
 
@@ -46,17 +50,16 @@ class build_model(nn.Module):
     def __init__(self):
         super().__init__()
         self.model_pre = models.efficientnet_v2_s(weights = models.EfficientNet_V2_S_Weights.DEFAULT)
+        # self.model_pre = models.efficientnet_b0(weights = models.EfficientNet_B0_Weights.DEFAULT)
         self.bn = nn.BatchNorm1d(1000)
         self.dropout = nn.Dropout(0.5)
-        self.classifier = nn.Linear(1000, 1)
-        self.relu = nn.ReLU()
+        self.classifier = nn.Linear(1000, 2)
 
     def forward(self, input):
         mid_features = self.model_pre(input)
         x = self.bn(mid_features) # BNを追加
         x = self.dropout(x) # dropoutを追加
         x = self.classifier(x)
-        x = self.relu(x) # ReLUの有無はほぼ影響がない
         return x
 
 if __name__ == "__main__":

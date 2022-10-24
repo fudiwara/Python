@@ -18,21 +18,19 @@ else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 
 # 画像の読み込み・変換
-img = Image.open(image_path).convert('RGB') # カラー指定で開く
-data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cellSize), T.ToTensor()])
+img = Image.open(image_path).convert('RGB')
+data_transforms = T.Compose([T.Resize(cf.cellSize), T.ToTensor()])
 data = data_transforms(img)
-data = data.unsqueeze(0) # テンソルに変換してから1次元追加
+data = data.unsqueeze(0)
 # print(data)
 # print(data.shape)
 
 # 推定処理
 data = data.to(DEVICE)
 outputs = model(data)
-_, preds = torch.max(outputs, 1) # 1次元目の中の最大値を得る(最大値と最大値のインデックス)
-pred = preds.cpu().numpy().tolist() # tensorから数値へ
+# print(outputs)
 
-# 結果の表示
-np.set_printoptions(precision=3)
-pred_val = outputs[0].to('cpu').detach().numpy().copy() # 各クラスの推定値
-print(pred_val)
-print(pred) # 結果のラベル
+# 結果には正規化用の係数を乗算する
+pred_val_0 = outputs[0][0].item() * cf.val_rate_0
+pred_val_1 = outputs[0][1].item() * cf.val_rate_1
+print(pred_val_0, pred_val_1)

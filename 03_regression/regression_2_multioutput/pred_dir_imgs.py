@@ -35,9 +35,9 @@ for i in range(len(fileList)):
         # 推定処理
         data = data.to(DEVICE)
         outputs = model(data)
-        print(outputs)
+        # print(outputs)
 
         # 結果には正規化用の係数を乗算する
         pred_val_0 = outputs[0].item() * cf.val_rate_0
         pred_val_1 = outputs[1].item() * cf.val_rate_1
-        print(pred_val_0, pred_val_1, image_path.name)
+        print(f"{pred_val_0:.3f} {pred_val_1:.3f} {image_path.name}")

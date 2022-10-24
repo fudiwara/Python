@@ -10,24 +10,25 @@ from torchvision import models
 cellSize = 200
 
 # クラス全体の数
-classesSize = 3
+classesSize = 10
 
 # 繰り返す回数
-epochSize = 10
+epochSize = 20
 
 # ミニバッチのサイズ
-batchSize = 80
+batchSize = 50
 
 # 学習時のサンプルを学習：検証データに分ける学習側の割合
 splitRateTrain = 0.8
 
 # データ変換
 data_transforms = T.Compose([
-    T.Resize(cellSize),
+    T.Resize(int(cellSize * 1.2)),
     T.RandomRotation(degrees = 15),
     T.RandomApply([T.GaussianBlur(5, sigma = (0.1, 5.0))], p = 0.5),
     T.ColorJitter(brightness = 0, contrast = 0, saturation = 0, hue = [-0.2, 0.2]),
     T.RandomHorizontalFlip(0.5),
+    T.CenterCrop(cellSize),
     T.ToTensor()])
 
 def calc_acc(output, label): # 結果が一致するラベルの数をカウントする
@@ -37,17 +38,18 @@ def calc_acc(output, label): # 結果が一致するラベルの数をカウン�
 class build_model(nn.Module):
     def __init__(self):
         super(build_model, self).__init__()
-        self.model_pret = models.resnet50(pretrained=True)
+        self.model_pre = models.efficientnet_v2_s(weights = models.EfficientNet_V2_S_Weights.DEFAULT)
+        # self.model_pre = models.efficientnet_b0(weights = models.EfficientNet_B0_Weights.DEFAULT)
         self.bn = nn.BatchNorm1d(1000)
         self.dropout = nn.Dropout(0.5)
         self.classifier = nn.Linear(1000, classesSize)
 
     def forward(self, input):
-        mid_features = self.model_pret(input)
+        mid_features = self.model_pre(input)
         x = self.bn(mid_features) # BNを追加
         x = self.dropout(x) # dropoutを追加
-        output = self.classifier(x)
-        return output
+        x = self.classifier(x)
+        return x
 
 if __name__ == "__main__":
     mdl = build_model()

@@ -21,11 +21,11 @@ model.eval()
 
 # データの読み込み (バッチサイズは適宜変更する)
 s_tm = time.time()
-data_transforms = T.Compose([T.Resize(cf.cellSize), T.ToTensor()])
+data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cellSize), T.ToTensor()])
 test_data = ImageFolder(dataset_path, data_transforms)
 print(test_data.class_to_idx)
 bs = cf.batchSize
-bs = int(bs * 1.2) # 必要メモリ量に応じた調整 (場合によっては1以下をかける)
+# bs = int(bs * 1.2) # 必要メモリ量に応じた調整 (場合によっては1以下をかける)
 test_loader = DataLoader(test_data, batch_size = bs, num_workers = os.cpu_count())
 
 label_list, pred_list = [], []

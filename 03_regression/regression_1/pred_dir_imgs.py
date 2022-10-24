@@ -18,6 +18,7 @@ else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 
 exts = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG'] # 処理対象の拡張子
+data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cellSize), T.ToTensor()])
 fileList = list(pathlib.Path(image_dir_path).iterdir())
 fileList.sort()
 for i in range(len(fileList)):
@@ -26,11 +27,8 @@ for i in range(len(fileList)):
 
         # 画像の読み込み・変換
         img = Image.open(image_path).convert('RGB')
-        data_transforms = T.Compose([T.Resize(cf.cellSize), T.ToTensor()])
         data = data_transforms(img)
         data = data.unsqueeze(0) # テンソルに変換してから1次元追加
-        # print(data)
-        # print(data.shape)
 
         # 推定処理
         data = data.to(DEVICE)

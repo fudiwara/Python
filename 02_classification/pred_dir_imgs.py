@@ -26,7 +26,7 @@ for i in range(len(fileList)):
         img = Image.open(image_path).convert("RGB") # カラー指定で開く
 
         # 画像の読み込み・変換
-        data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cellSize), T.ToTensor()])
+        data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
         data = data_transforms(img)
         data = data.unsqueeze(0) # テンソルに変換してから1次元追加
         # print(data)

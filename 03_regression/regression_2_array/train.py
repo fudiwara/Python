@@ -95,5 +95,5 @@ for epoch in range(cf.epochSize):
     # 学習の状況をCSVに保存
     with open(path_log, mode = "a") as f: f.write("%f,%f,%f,%f\n" % (train_loss, val_loss, train_acc, val_acc))
 
-# torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{epoch:03}.pth") # モデルの保存
+# torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{cf.epochSize:03}.pth") # モデルの保存
 print("done %.0fs" % (time.time() - s_tm))

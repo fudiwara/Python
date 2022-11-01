@@ -16,8 +16,8 @@ model = cf.build_model().to(DEVICE)
 if DEVICE == "cuda":  model.load_state_dict(torch.load(model_path))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
-
 data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
+
 exts = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG'] # 処理対象の拡張子
 fileList = list(pathlib.Path(image_dir_path).iterdir())
 fileList.sort()

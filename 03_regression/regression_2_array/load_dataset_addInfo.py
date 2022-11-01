@@ -48,7 +48,7 @@ class ImageFolder_reg2(Dataset):
         fname_prt = path.stem.split("_")
         reg_val_0 = float(fname_prt[cf.sep_val_0]) / cf.val_rate_0
         reg_val_1 = float(fname_prt[cf.sep_val_1]) / cf.val_rate_1
-        out_val = np.array([reg_val_0, reg_val_1])
+        out_val = np.array([reg_val_0, reg_val_1]) # それぞれの真値をまとめて配列にする
 
         return img, torch.tensor(out_val.astype(np.float32))
 

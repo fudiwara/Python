@@ -16,10 +16,10 @@ model = cf.build_model().to(DEVICE)
 if DEVICE == "cuda":  model.load_state_dict(torch.load(model_path))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
+data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
 
 # 画像の読み込み・変換
 img = Image.open(image_path).convert('RGB')
-data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
 data = data_transforms(img)
 data = data.unsqueeze(0)
 # print(data)

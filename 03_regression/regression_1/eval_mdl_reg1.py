@@ -19,7 +19,7 @@ else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 
 # データの読み込み (バッチサイズは適宜変更する)
-data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cellSize), T.ToTensor()])
+data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
 test_data = ld.ImageFolder_reg1(dataset_path, data_transforms) # データの読み込み
 test_loader = DataLoader(test_data, batch_size = 20, num_workers = os.cpu_count())
 
@@ -41,6 +41,7 @@ for i, (data, label) in enumerate(test_loader):
 print()
 
 val_gt_list = np.array(label_list) * cf.val_rate
+val_gt_list = val_gt_list.reshape(-1)
 val_es_list = np.array(pred_list) * cf.val_rate
 val_abs_dist = []
 f = open("_plot.csv", mode = "w")
@@ -57,3 +58,6 @@ print(np.mean(val_gt_list), np.var(val_gt_list), np.min(val_gt_list), np.max(val
 print(np.mean(val_es_list), np.var(val_es_list), np.min(val_es_list), np.max(val_es_list))
 print(np.mean(val_abs_dist), np.var(val_abs_dist), np.min(val_abs_dist), np.max(val_abs_dist))
 f.close()
+
+cor = np.corrcoef(val_gt_list, val_es_list)
+print(cor[0, 1])

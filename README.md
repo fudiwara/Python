@@ -14,11 +14,8 @@ CNNで画像の識別をしてみる。
 * 第三回：[03_regression](https://github.com/fudiwara/Python/tree/main/03_regression)  
 CNNで画像からの回帰をしてみる。
 
-* 第四回：[04_pix2pix](https://github.com/fudiwara/Python/tree/main/04_pix2pix)  
-pix2pixをしてみる。
+* 第四回：[04_pix2pix](https://github.com/fudiwara/Python/tree/main/04_conversion)  
+画像変換をしてみる。
 
-* 第五回：[05_cycleGan](https://github.com/fudiwara/Python/tree/main/05_cycleGan)  
-CycleGanをしてみる。
-
-* 第六回：[06_object_detection](https://github.com/fudiwara/Python/tree/main/06_object_detection)  
-CNNで画像からの物体検出をしてみる。
+* 第五回：[05_object_detection](https://github.com/fudiwara/Python/tree/main/05_object_detection)  
+深層学習で画像からの物体検出をしてみる。

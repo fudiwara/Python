@@ -142,11 +142,11 @@ for i in range(cf.epochSize):
     
     # Gでの生成画像例とソース画像を連結してから保存
     buf_save_imgs = torch.cat([real_A[:min(batch_len, 32)], fake_B[:min(batch_len, 32)]], dim=0)
-    torchvision.utils.save_image(buf_save_imgs, f"{log_dir}/_e_{id_str}_{i:03}.png", range=(-1.0,1.0), normalize=True)
+    torchvision.utils.save_image(buf_save_imgs, f"{log_dir}/_e_{id_str}_{i + 1:03}.png", value_range=(-1.0,1.0), normalize=True)
 
     # モデルの保存
     # if 0 < i and (i % 10 == 0 or i == cf.epochSize - 1):
-    torch.save(G_A2B.state_dict(), f"{log_dir}/_m_{id_str}_{i:03}.pth")
+    torch.save(G_A2B.state_dict(), f"{log_dir}/_m_{id_str}_{i + 1:03}.pth")
     
 np.savetxt(path_log, np.array(log_list), delimiter = ",", fmt="%.5f") # ログの保存
 print("done %.0fs" % (time.time() - s_tm))

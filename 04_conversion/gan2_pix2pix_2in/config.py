@@ -11,11 +11,9 @@ from torchvision import models
 cellSize = 192
 
 # 繰り返す回数
-# epochSize = 200
-epochSize = 100
+epochSize = 200
 
 # ミニバッチのサイズ
-# batchSize = 128
 batchSize = 24
 
 # データセットの数 (イテレーション数を求めたりするためにグローバルで使えるようにしておく)

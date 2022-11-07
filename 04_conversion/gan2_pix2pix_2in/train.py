@@ -17,6 +17,8 @@ id_str = sys.argv[1]
 dataset_path_src = sys.argv[2]
 dataset_path_target = sys.argv[3]
 path_log = "_l_" + id_str + ".csv"
+log_dir = "log_" + id_str
+if not os.path.exists(log_dir): os.mkdir(log_dir) # モデルの保存用のフォルダ
 
 model_G, model_D = cf.Generator(), cf.Discriminator()
 model_G, model_D = nn.DataParallel(model_G), nn.DataParallel(model_D)
@@ -96,16 +98,14 @@ for i in range(cf.epochSize):
 
     print("\r {:03} / {:03} [ {:04} / {:04} ] GL bce: {:.04f} l1: {:.04f} DL: {:.04f} {:.01f}s".format(i + 1, cf.epochSize, n, itr_size, gl_bce, gl_l1, dl, time.time() - n_tm))
 
-    # 画像を保存
-    if not os.path.exists("log"): os.mkdir("log") # 画像保存用のフォルダ
     # Gでの生成画像例とソース画像を連結してから保存
     buf_save_imgs = torch.cat([fake_target_tensor[:min(batch_len, 32)], real_target[:min(batch_len, 32)]], dim=0)
-    torchvision.utils.save_image(buf_save_imgs, f"log/_e_{i:03}.png", range=(-1.0,1.0), normalize=True)
+    torchvision.utils.save_image(buf_save_imgs, f"{log_dir}/_e_{i + 1:03}.png", value_range=(-1.0,1.0), normalize=True)
 
     # モデルの保存
     if 0 < i and (i % 10 == 0 or i == cf.epochSize - 1):
-        torch.save(model_G.state_dict(), f"log/_gen_{i:03}.pth")
-        torch.save(model_D.state_dict(), f"log/_dis_{i:03}.pth")
+        torch.save(model_G.state_dict(), f"{log_dir}/_gen_{i + 1:03}.pth")
+        torch.save(model_D.state_dict(), f"{log_dir}/_dis_{i + 1:03}.pth")
     
 np.savetxt(path_log, np.array(log_list), delimiter = ",", fmt="%.5f") # ログの保存
 print("done %.0fs" % (time.time() - s_tm))

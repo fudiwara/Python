@@ -13,10 +13,8 @@ cellSize = 512
 # 繰り返す回数
 # epochSize = 100
 epochSize = 400
-# epochSize = 2
 
 # 学習するときの小さいセットの数：GANなので少なめも要確認
-# batchSize = 128
 batchSize = 3
 
 # データセットの数 (イテレーション数を求めたりするためにグローバルで使えるようにしておく)
@@ -29,9 +27,12 @@ dataAugRate = 1
 if cellSize == 128: resBlocks=6
 else: resBlocks=9
 
+# identity損失：0〜1
 # lambda_identity = 0
-# lambda_cycle = 10
 lambda_identity = 1
+
+# ctcle損失：0〜10
+# lambda_cycle = 10
 lambda_cycle = 1
 
 class loss_scheduler():

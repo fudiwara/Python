@@ -12,13 +12,12 @@ import load_dataset as ld
 import config as cf
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-torch.backends.cudnn.benchmark = True
 id_str = sys.argv[1]
 id_str += f"_b{cf.batchSize}_i{cf.lambda_identity}_c{cf.lambda_cycle}"
 dataset_path_src = sys.argv[2]
 dataset_path_target = sys.argv[3]
 path_log = "_l_" + id_str + ".csv"
-log_dir = "log_" + id_str
+log_dir = "_log_" + id_str
 if not os.path.exists(log_dir): os.mkdir(log_dir) # 画像保存用のフォルダ
 
 # モデルの定義
@@ -26,13 +25,6 @@ G_A2B = cf.Generator(3,cf.resBlocks).to(DEVICE)
 G_B2A = cf.Generator(3,cf.resBlocks).to(DEVICE)
 D_A = cf.Discriminator(3).to(DEVICE)
 D_B = cf.Discriminator(3).to(DEVICE)
-
-# 高速化のためのdataPararellをする場合は推定側でも
-# G_A2B = torch.nn.DataParallel(G_A2B)
-# G_B2A = torch.nn.DataParallel(G_B2A)
-# D_A = torch.nn.DataParallel(D_A)
-# D_B = torch.nn.DataParallel(D_B)
-# torch.backends.cudnn.benchmark=True
 
 # 重みの初期化
 G_A2B.apply(cf.init_weights)

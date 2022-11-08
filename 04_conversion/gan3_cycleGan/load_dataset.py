@@ -40,8 +40,8 @@ class ImageFolder_2dom(Dataset):
         return img_paths
 
     def __len__(self): # ディレクトリ内の画像ファイルの数
-        # dataset_len = len(self.img_paths0) if len(self.img_paths1) < len(self.img_paths0) else len(self.img_paths1) # (多い方の数にする)
-        dataset_len = len(self.img_paths0) if len(self.img_paths1) > len(self.img_paths0) else len(self.img_paths1) # (少ない方の数にする)
+        dataset_len = len(self.img_paths0) if len(self.img_paths1) < len(self.img_paths0) else len(self.img_paths1) # (多い方の数にする)
+        # dataset_len = len(self.img_paths0) if len(self.img_paths1) > len(self.img_paths0) else len(self.img_paths1) # (少ない方の数にする)
         return dataset_len * cf.dataAugRate
 
 # データ変換

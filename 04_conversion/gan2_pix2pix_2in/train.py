@@ -6,106 +6,147 @@ import statistics
 import torch
 from torch import nn
 import torchvision
+from itertools import chain
 
 import load_dataset as ld
 import config as cf
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-print(DEVICE) 
 torch.backends.cudnn.benchmark = True
 id_str = sys.argv[1]
+id_str += f"_b{cf.batchSize}_i{cf.lambda_identity}_c{cf.lambda_cycle}"
 dataset_path_src = sys.argv[2]
 dataset_path_target = sys.argv[3]
 path_log = "_l_" + id_str + ".csv"
-log_dir = "log_" + id_str
-if not os.path.exists(log_dir): os.mkdir(log_dir) # モデルの保存用のフォルダ
+log_dir = "_log_" + id_str
+if not os.path.exists(log_dir): os.mkdir(log_dir) # 画像保存用のフォルダ
 
-model_G, model_D = cf.Generator(), cf.Discriminator()
-model_G, model_D = nn.DataParallel(model_G), nn.DataParallel(model_D)
-model_G, model_D = model_G.to(DEVICE), model_D.to(DEVICE)
+# モデルの定義
+G_A2B = cf.Generator(3,cf.resBlocks).to(DEVICE)
+G_B2A = cf.Generator(3,cf.resBlocks).to(DEVICE)
+D_A = cf.Discriminator(3).to(DEVICE)
+D_B = cf.Discriminator(3).to(DEVICE)
 
-params_G = torch.optim.Adam(model_G.parameters(), lr=0.0002, betas=(0.5, 0.999))
-params_D = torch.optim.Adam(model_D.parameters(), lr=0.0002, betas=(0.5, 0.999))
+# 高速化のためのdataPararellをする場合は推定側でも
+# G_A2B = torch.nn.DataParallel(G_A2B)
+# G_B2A = torch.nn.DataParallel(G_B2A)
+# D_A = torch.nn.DataParallel(D_A)
+# D_B = torch.nn.DataParallel(D_B)
+# torch.backends.cudnn.benchmark=True
 
-# ロスを計算するためのラベル変数 (PatchGAN)
-pgs = cf.cellSize // 16
-ones = torch.ones(cf.batchSize, 1, pgs, pgs).to(DEVICE)
-zeros = torch.zeros(cf.batchSize, 1, pgs, pgs).to(DEVICE)
+# 重みの初期化
+G_A2B.apply(cf.init_weights)
+G_B2A.apply(cf.init_weights)
+D_A.apply(cf.init_weights)
+D_B.apply(cf.init_weights)
 
-# 損失関数
-bce_loss = nn.BCEWithLogitsLoss()
-mae_loss = nn.L1Loss()
+# 各種の損失関数
+adv_loss = nn.MSELoss()
+cycle_loss = nn.L1Loss()
+identity_loss = nn.L1Loss()
 
-log_list = [] # エラー推移の記録用
+# 各種の最適化関数
+optimizer_G = torch.optim.Adam(chain(G_A2B.parameters(),G_B2A.parameters()),lr=0.0002,betas=(0.5, 0.999))
+optimizer_D_A = torch.optim.Adam(D_A.parameters(), lr=0.0002, betas=(0.5, 0.999))
+optimizer_D_B = torch.optim.Adam(D_B.parameters(), lr=0.0002, betas=(0.5, 0.999))
 
-# 訓練
+scheduler_G = torch.optim.lr_scheduler.LambdaLR(optimizer_G,lr_lambda=cf.loss_scheduler(100).f)
+scheduler_D_A = torch.optim.lr_scheduler.LambdaLR(optimizer_D_A,lr_lambda=cf.loss_scheduler(100).f)
+scheduler_D_B = torch.optim.lr_scheduler.LambdaLR(optimizer_D_B,lr_lambda=cf.loss_scheduler(100).f)
+
+fake_A_buffer = cf.ImagePool()
+fake_B_buffer = cf.ImagePool()
+
+# 学習
 dataset = ld.load_datasets(dataset_path_src, dataset_path_target)
 itr_size = cf.dataset_size // cf.batchSize
+log_list = [] # エラー推移の記録用
 s_tm = time.time()
 for i in range(cf.epochSize):
-    log_loss_G_sum, log_loss_G_bce, log_loss_G_mae, log_loss_D = [], [], [], []
+    ll_G_A2B, ll_G_B2A, ll_G_CA, ll_G_CB, ll_D_A, ll_D_B = [], [], [], [], [], []
     n_tm = time.time()
-    for n, (imgs_src, real_target) in enumerate(dataset):
-        batch_len = len(real_target)
-        real_target, imgs_src = real_target.to(DEVICE), imgs_src.to(DEVICE)
-        
-        fake_target = model_G(imgs_src) # Gの訓練: 偽のターゲットドメイン画像を作成
-        fake_target_tensor = fake_target.detach() # 偽画像を一時保存
+    losses = [0 for i in range(6)]
+    for n, (imgs_src, img_target) in enumerate(dataset):
+        batch_len = len(imgs_src)
+        # 画像の準備
+        real_A, real_B = imgs_src.to(DEVICE), img_target.to(DEVICE)
+        fake_A, fake_B = G_B2A(real_B), G_A2B(real_A)
+        rec_A, rec_B = G_B2A(fake_B), G_A2B(fake_A)
+        if cf.lambda_identity > 0: iden_A, iden_B = G_B2A(real_A), G_A2B(real_B)
 
-        # 偽画像を本物と騙せるようにロスを計算
-        LAMBD = 100.0 # BCEとMAEの係数
-        out = model_D(torch.cat([fake_target, imgs_src], dim=1))
-        loss_G_bce = bce_loss(out, ones[:batch_len])
-        loss_G_mae = LAMBD * mae_loss(fake_target, real_target)
-        loss_G_sum = loss_G_bce + loss_G_mae
+        # generatorの学習
+        cf.set_requires_grad([D_A, D_B],False)
+        optimizer_G.zero_grad()
 
-        log_loss_G_bce.append(loss_G_bce.item())
-        log_loss_G_mae.append(loss_G_mae.item())
-        log_loss_G_sum.append(loss_G_sum.item())
+        pred_fake_A = D_A(fake_A)
+        loss_G_B2A = adv_loss(pred_fake_A, torch.tensor(1.0).expand_as(pred_fake_A).to(DEVICE))
 
-        # 微分計算・重み更新
-        params_D.zero_grad()
-        params_G.zero_grad()
-        loss_G_sum.backward()
-        params_G.step()
+        pred_fake_B = D_B(fake_B)
+        loss_G_A2B = adv_loss(pred_fake_B, torch.tensor(1.0).expand_as(pred_fake_B).to(DEVICE))
 
-        # Discriminatoの訓練: 本物のターゲットドメイン画像を本物と識別できるようにロスを計算
-        real_out = model_D(torch.cat([real_target, imgs_src], dim=1))
-        loss_D_real = bce_loss(real_out, ones[:batch_len])
+        loss_cycle_A = cycle_loss(rec_A, real_A)
+        loss_cycle_B = cycle_loss(rec_B, real_B)
 
-        # 偽の画像の偽と識別できるようにロスを計算
-        fake_out = model_D(torch.cat([fake_target_tensor, imgs_src], dim=1))
-        loss_D_fake = bce_loss(fake_out, zeros[:batch_len])
+        if cf.lambda_identity > 0:
+            loss_identity_A = identity_loss(iden_A, real_A)
+            loss_identity_B = identity_loss(iden_B, real_B)
+            loss_G = loss_G_A2B + loss_G_B2A + loss_cycle_A * cf.lambda_cycle + loss_cycle_B * cf.lambda_cycle + loss_identity_A * cf.lambda_cycle * cf.lambda_identity + loss_identity_B * cf.lambda_cycle * cf.lambda_identity
+        else:
+            loss_G = loss_G_A2B + loss_G_B2A + loss_cycle_A * cf.lambda_cycle + loss_cycle_B * cf.lambda_cycle
 
-        # 実画像と偽画像のロスを合計
-        loss_D = loss_D_real + loss_D_fake
-        log_loss_D.append(loss_D.item())
+        loss_G.backward()
+        optimizer_G.step()
 
-        # 微分計算・重み更新
-        params_D.zero_grad()
-        params_G.zero_grad()
-        loss_D.backward()
-        params_D.step()
+        ll_G_A2B.append(loss_G_A2B.item())
+        ll_G_B2A.append(loss_G_B2A.item())
+        ll_G_CA.append(loss_cycle_A.item())
+        ll_G_CB.append(loss_cycle_B.item())
 
-        print("\r {:03} / {:03} [ {:04} / {:04} ] GL bce: {:.04f} l1: {:.04f} DL: {:.04f}".format(i + 1, cf.epochSize, n, itr_size, loss_G_bce.item(), loss_G_mae.item(), loss_D.item()), end = "")
+        # discriminatorの学習
+        cf.set_requires_grad([D_A,D_B],True)
+        optimizer_D_A.zero_grad()
+        pred_real_A = D_A(real_A)
+        fake_A_ = fake_A_buffer.get_images(fake_A)
+        pred_fake_A = D_A(fake_A_.detach())
+        loss_D_A_real = adv_loss(pred_real_A, torch.tensor(1.0).expand_as(pred_real_A).to(DEVICE))
+        loss_D_A_fake = adv_loss(pred_fake_A, torch.tensor(0.0).expand_as(pred_fake_A).to(DEVICE))
+        loss_D_A = (loss_D_A_fake + loss_D_A_real) * 0.5
+        loss_D_A.backward()
+        optimizer_D_A.step()
+
+        optimizer_D_B.zero_grad()
+        pred_real_B = D_B(real_B)
+        fake_B_ = fake_B_buffer.get_images(fake_B)
+        pred_fake_B = D_B(fake_B_.detach())
+        loss_D_B_real = adv_loss(pred_real_B, torch.tensor(1.0).expand_as(pred_real_B).to(DEVICE))
+        loss_D_B_fake = adv_loss(pred_fake_B, torch.tensor(0.0).expand_as(pred_fake_B).to(DEVICE))
+        loss_D_B = (loss_D_B_fake + loss_D_B_real) * 0.5
+        loss_D_B.backward()
+        optimizer_D_B.step()
+
+        ll_D_A.append(loss_D_A.item())
+        ll_D_B.append(loss_D_B.item())
+
+        print("\r {:03} / {:03} [ {:04} / {:04} ] GL A2B: {:.04f} B2A: {:.04f} DL A: {:.04f} B: {:.04f}".format(i + 1, cf.epochSize, n, itr_size, loss_G_A2B.item(), loss_G_B2A.item(), loss_D_A.item(), loss_D_B.item()), end = "")
         # if n == 3: break
 
-    gl_mean = statistics.mean(log_loss_G_sum)
-    gl_bce = statistics.mean(log_loss_G_bce)
-    gl_l1 = statistics.mean(log_loss_G_mae)
-    dl = statistics.mean(log_loss_D)
-    log_list.append([gl_mean, gl_bce, gl_l1, dl])
+    gab_mse = statistics.mean(ll_G_A2B)
+    gba_mse = statistics.mean(ll_G_B2A)
+    gca_l1 = statistics.mean(ll_G_CA)
+    gcb_l1 = statistics.mean(ll_G_CB)
+    da_mse = statistics.mean(ll_D_A)
+    db_mse = statistics.mean(ll_D_B)
+    log_list.append([gab_mse, gba_mse, gca_l1, gcb_l1, da_mse, db_mse])
 
-    print("\r {:03} / {:03} [ {:04} / {:04} ] GL bce: {:.04f} l1: {:.04f} DL: {:.04f} {:.01f}s".format(i + 1, cf.epochSize, n, itr_size, gl_bce, gl_l1, dl, time.time() - n_tm))
-
+    print("\r {:03} / {:03} [ {:04} / {:04} ] GL A2B: {:.04f} B2A: {:.04f} DL A: {:.04f} B: {:.04f} {:.01f}s".format(i + 1, cf.epochSize, n, itr_size, gab_mse, gba_mse, da_mse, db_mse, time.time() - n_tm))
+    
     # Gでの生成画像例とソース画像を連結してから保存
-    buf_save_imgs = torch.cat([fake_target_tensor[:min(batch_len, 32)], real_target[:min(batch_len, 32)]], dim=0)
-    torchvision.utils.save_image(buf_save_imgs, f"{log_dir}/_e_{i + 1:03}.png", value_range=(-1.0,1.0), normalize=True)
+    buf_save_imgs = torch.cat([real_A[:min(batch_len, 32)], fake_B[:min(batch_len, 32)]], dim=0)
+    torchvision.utils.save_image(buf_save_imgs, f"{log_dir}/_e_{id_str}_{i + 1:03}.png", value_range=(-1.0,1.0), normalize=True)
 
     # モデルの保存
-    if 0 < i and (i % 10 == 0 or i == cf.epochSize - 1):
-        torch.save(model_G.state_dict(), f"{log_dir}/_gen_{i + 1:03}.pth")
-        torch.save(model_D.state_dict(), f"{log_dir}/_dis_{i + 1:03}.pth")
+    # if 0 < i and (i % 10 == 0 or i == cf.epochSize - 1):
+    torch.save(G_A2B.state_dict(), f"{log_dir}/_m_{id_str}_{i + 1:03}.pth")
     
 np.savetxt(path_log, np.array(log_list), delimiter = ",", fmt="%.5f") # ログの保存
 print("done %.0fs" % (time.time() - s_tm))

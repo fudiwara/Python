@@ -29,7 +29,7 @@ print(len(indices), len(train_dataset), len(val_dataset))
 
 # 訓練データと評価データのデータロード用オブジェクトを用意
 train_loader = DataLoader(train_dataset, batch_size=cf.batchSize, shuffle=True, num_workers=int(os.cpu_count() / 2), collate_fn=ld.collate_fn)
-val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=os.cpu_count(), collate_fn=ld.collate_fn)
+val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=int(os.cpu_count() / 2), collate_fn=ld.collate_fn)
 
 # モデル、損失関数、最適化関数、収束率の定義
 model = cf.build_model().to(DEVICE)

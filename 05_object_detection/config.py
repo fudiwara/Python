@@ -19,16 +19,15 @@ thDetection = 0.6
 splitRateTrain = 0.8
 
 def build_model():
-    model = torchvision.models.detection.retinanet_resnet50_fpn(weights="DEFAULT")
+    model = torchvision.models.detection.fcos_resnet50_fpn(weights="DEFAULT")
 
-    in_features = model.head.classification_head.conv[0][0].in_channels
+    # 事前訓練済みのヘッドを新しいものと置き換える
     num_anchors = model.head.classification_head.num_anchors
     model.head.classification_head.num_classes = numClasses
-    
-    cls_logits = torch.nn.Conv2d(in_features, num_anchors * numClasses, kernel_size = 3, stride=1, padding=1)
-    torch.nn.init.normal_(cls_logits.weight, std=0.01)  # as per pytorch code
-    torch.nn.init.constant_(cls_logits.bias, -math.log((1 - 0.01) / 0.01))  # as per pytorcch code 
-    # assign cls head to model
+    out_channels = model.head.classification_head.conv[9].out_channels
+    cls_logits = torch.nn.Conv2d(out_channels, num_anchors * numClasses, kernel_size=3, stride=1, padding=1)
+    torch.nn.init.normal_(cls_logits.weight, std=0.01)
+    torch.nn.init.constant_(cls_logits.bias, -math.log((1 - 0.01) / 0.01))
     model.head.classification_head.cls_logits = cls_logits
 
     return model
@@ -36,6 +35,6 @@ def build_model():
 if __name__ == "__main__":
     from torchsummary import summary
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    mdl = build_model()
+    mdl = create_model()
     print(mdl)
     # summary(mdl, (3, imageSize, imageSize))

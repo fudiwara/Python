@@ -1,6 +1,7 @@
 import sys, os, time
 sys.dont_write_bytecode = True
 import torch
+import torchvision
 from torch.utils.data import DataLoader
 from pyt_det.engine import train_one_epoch, evaluate
 import config as cf

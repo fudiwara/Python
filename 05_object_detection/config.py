@@ -7,7 +7,7 @@ import torchvision
 epochSize = 20
 
 # 学習時のバッチのサイズ
-batchSize = 6
+batchSize = 4
 
 # カテゴリの総数 (背景の0を含めた合計)
 numClasses = 2

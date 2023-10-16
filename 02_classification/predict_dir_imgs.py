@@ -17,7 +17,7 @@ if DEVICE == "cuda":  model.load_state_dict(torch.load(model_path))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 
-exts = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG'] # 処理対象の拡張子
+exts = [".jpg", ".png", ".jpeg", ".JPG", ".PNG", ".JPEG"] # 処理対象の拡張子
 fileList = list(pathlib.Path(image_dir_path).iterdir())
 fileList.sort()
 for i in range(len(fileList)):

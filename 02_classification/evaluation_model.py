@@ -21,7 +21,7 @@ model.eval()
 
 # データの読み込み (バッチサイズは適宜変更する)
 s_tm = time.time()
-data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cellSize), T.ToTensor()])
+data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
 test_data = ImageFolder(dataset_path, data_transforms)
 print(test_data.class_to_idx)
 bs = cf.batchSize

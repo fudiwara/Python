@@ -16,7 +16,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(DEVICE)
 model_path = sys.argv[1] # モデルのパス
 image_path = sys.argv[2] # 入力画像のパス
-file_name = pathlib.Path(sys.argv[2])
+file_name = pathlib.Path(image_path)
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.Generator(3, cf.resBlocks).to(DEVICE)

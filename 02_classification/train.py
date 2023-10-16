@@ -35,10 +35,10 @@ val_loader = DataLoader(val_dataset, batch_size = cf.batchSize, num_workers = os
 model = cf.build_model().to(DEVICE)
 criterion = nn.CrossEntropyLoss()
 # optimizer = optim.Adam(model.parameters())
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-rate_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+optimizer = optim.SGD(model.parameters(), lr = 0.01, momentum = 0.9)
+rate_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = cf.epochSize // 3, gamma = 0.1)
 
-def Train_Eval(model,criterion,optimizer,scheduler,data_loader,device,epoch,max_epoch,is_val = False):
+def Train_Eval(model, criterion, optimizer, scheduler, data_loader, device, epoch, max_epoch, is_val = False):
     total_loss = 0.0
     total_acc = 0.0
     counter = 0
@@ -65,10 +65,10 @@ def Train_Eval(model,criterion,optimizer,scheduler,data_loader,device,epoch,max_
         
         # lossおよび精度を表示・1エポックが終わる度にかかった時間も表示する
         if is_val == False:
-            disp_score_t = "{:03} / {:03} [ {:04} / {:04} ] l: {:.05f} a: {:.03f}".format(epoch+1, max_epoch, n + 1, len(data_loader), total_loss/(n+1), total_acc/counter)
-            print("\r {}".format(disp_score_t), end = "")
+            disp_score_t = f"{epoch + 1:03} / {max_epoch:03} [ {n + 1:04} / {len(data_loader):04} ] l: {total_loss / (n + 1):.05f} a: {total_acc / counter:.03f}"
+            print(f"\r {disp_score_t}", end = "")
         else: 
-            print("\r {} l: {:.05f} a: {:.03f}".format(disp_score_t, total_loss/(n+1), total_acc/counter), end = "")
+            print(f"\r {disp_score_t} l: {total_loss / (n + 1):.05f} a: {total_acc / counter:.03f}", end = "")
 
     if is_val == False: scheduler.step() # 学習率の変更
 
@@ -89,10 +89,10 @@ for epoch in range(cf.epochSize):
 
     # if best_loss is None or val_loss < best_loss: # lossを更新したときのみ保存
     #     best_loss = val_loss
-    torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{epoch + 1:03}.pth") # モデルの保存
+    torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{str(epoch + 1).zfill(3)}.pth")
 
     # 学習の状況をCSVに保存
-    with open(path_log, mode = "a") as f: f.write("%f,%f,%f,%f\n" % (train_loss, val_loss, train_acc, val_acc))
+    with open(path_log, mode = "a") as f: f.write(f"{train_loss},{val_loss},{train_acc},{val_acc}")
 
 torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{cf.epochSize:03}.pth") # モデルの保存
-print("done %.0fs" % (time.time() - s_tm))
+print(f"done {time.time() - s_tm:.0f}s")

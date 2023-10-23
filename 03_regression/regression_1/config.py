@@ -60,9 +60,21 @@ class build_model(nn.Module):
         return x
 
 if __name__ == "__main__":
-    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    mdl = build_model().to(DEVICE)
-    print(mdl)
+    import os
+    from torchinfo import summary
+    from torchviz import make_dot
 
-    from torchsummary import summary
-    summary(mdl, (3, cellSize, cellSize))
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+    print(DEVICE)
+
+    mdl = build_model()
+    print(mdl)
+    summary(mdl, (batchSize, 3, cellSize, cellSize))
+    
+    x = torch.randn(batchSize, 3, cellSize, cellSize).to(DEVICE) # 適当な入力
+    y = mdl(x) # その出力
+    
+    img = make_dot(y, params = dict(mdl.named_parameters())) # 計算グラフの表示
+    img.format = "png"
+    img.render("_model_graph") # グラフを画像に保存
+    os.remove("_model_graph") # 拡張子無しのファイルもできるので個別に削除

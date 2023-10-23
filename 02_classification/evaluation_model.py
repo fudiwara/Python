@@ -43,4 +43,5 @@ print()
 print(accuracy_score(label_list, pred_list)) # 正解率
 print(confusion_matrix(label_list, pred_list)) # 混同行列
 print(classification_report(label_list, pred_list)) # 各種評価指標
-print("done %.0fs" % (time.time() - s_tm))
+
+print(f"done {time.time() - s_tm:.0f}s")

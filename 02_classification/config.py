@@ -39,7 +39,6 @@ class build_model(nn.Module):
     def __init__(self):
         super(build_model, self).__init__()
         self.model_pre = models.efficientnet_v2_s(weights = models.EfficientNet_V2_S_Weights.DEFAULT)
-        # self.model_pre = models.efficientnet_b0(weights = models.EfficientNet_B0_Weights.DEFAULT)
         self.bn = nn.BatchNorm1d(1000)
         self.dropout = nn.Dropout(0.5)
         self.classifier = nn.Linear(1000, classesSize)
@@ -52,8 +51,22 @@ class build_model(nn.Module):
         return x
 
 if __name__ == "__main__":
+    import os
+    from torchinfo import summary
+    from torchviz import make_dot
+
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+    print(DEVICE)
+
     mdl = build_model()
     print(mdl)
+    summary(mdl, (batchSize, 3, cellSize, cellSize))
+    
+    x = torch.randn(batchSize, 3, cellSize, cellSize).to(DEVICE) # 適当な入力
+    y = mdl(x) # その出力
+    
+    img = make_dot(y, params = dict(mdl.named_parameters())) # 計算グラフの表示
+    img.format = "png"
+    img.render("_model_graph") # グラフを画像に保存
+    os.remove("_model_graph") # 拡張子無しのファイルもできるので個別に削除
 
-    from torchsummary import summary
-    summary(mdl, (3, cellSize, cellSize))

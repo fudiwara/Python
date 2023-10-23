@@ -75,7 +75,7 @@ def Train_Eval(model, criterion, optimizer, scheduler, data_loader, device, epoc
     # 学習に使った画像の一部を保存
     torchvision.utils.save_image(data[:min(cf.batchSize, 16)], f"{log_dir}/_i_{id_str}_{epoch + 1:03}.png", value_range=(-1.0,1.0), normalize=True)
 
-    return total_loss/(n+1), total_acc/counter
+    return total_loss / (n + 1), total_acc / counter
 
 best_loss = None
 with open(path_log, mode = "w") as f: f.write("")
@@ -85,7 +85,7 @@ for epoch in range(cf.epochSize):
     n_tm = time.time()
     train_loss, train_acc = Train_Eval(model,criterion,optimizer,rate_scheduler,train_loader,DEVICE,epoch,cf.epochSize) 
     val_loss, val_acc = Train_Eval(model,criterion,optimizer,rate_scheduler,val_loader,DEVICE,epoch,cf.epochSize,is_val=True)
-    print(" %.0fs" % (time.time() - n_tm))
+    print(f" {time.time() - n_tm:.0f}s")
 
     # if best_loss is None or val_loss < best_loss: # lossを更新したときのみ保存
     #     best_loss = val_loss

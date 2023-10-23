@@ -36,11 +36,11 @@ for i in range(len(fileList)):
         data = data.to(DEVICE)
         outputs = model(data)
         _, preds = torch.max(outputs, 1) # 1次元目の中の最大値を得る(最大値と最大値のインデックス)
-        pred = preds.cpu().numpy().tolist() # tensorから数値へ
+        pred_idx = preds.cpu().numpy().tolist() # tensorから数値へ
         
         np.set_printoptions(precision=3)
-        pred_val = outputs[0].to('cpu').detach().numpy().copy() # 各クラスの推定値
+        pred_val = outputs[0].to("cpu").detach().numpy().copy() # 各クラスの推定値
 
         print(image_path.name) # ファイル名
         print(pred_val) # 推定結果の表示
-        print(pred[0]) # 結果のラベル
+        print(pred_idx[0]) # 結果のラベル

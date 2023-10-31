@@ -13,7 +13,7 @@ cellSize = 200
 classesSize = 10
 
 # 繰り返す回数
-epochSize = 20
+epochSize = 10
 
 # ミニバッチのサイズ
 batchSize = 50

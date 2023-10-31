@@ -15,7 +15,7 @@ print(DEVICE)
 id_str = sys.argv[1] # 識別用のID
 dataset_path = sys.argv[2] # フォルダのあるパス
 path_log = "_l_" + id_str + ".csv"
-log_dir = "log_" + id_str
+log_dir = "_log_" + id_str
 if not os.path.exists(log_dir): os.mkdir(log_dir) # モデルの保存用のフォルダ
 disp_score_t = ""
 
@@ -35,7 +35,7 @@ val_loader = DataLoader(val_dataset, batch_size = cf.batchSize, num_workers = os
 model = cf.build_model().to(DEVICE)
 criterion = nn.CrossEntropyLoss()
 # optimizer = optim.Adam(model.parameters())
-optimizer = optim.SGD(model.parameters(), lr = 0.01, momentum = 0.9)
+optimizer = optim.SGD(model.parameters(), lr = 0.001, momentum = 0.9)
 rate_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = cf.epochSize // 3, gamma = 0.1)
 
 def Train_Eval(model, criterion, optimizer, scheduler, data_loader, device, epoch, max_epoch, is_val = False):
@@ -83,13 +83,13 @@ s_tm = time.time()
 
 for epoch in range(cf.epochSize):
     n_tm = time.time()
-    train_loss, train_acc = Train_Eval(model,criterion,optimizer,rate_scheduler,train_loader,DEVICE,epoch,cf.epochSize) 
-    val_loss, val_acc = Train_Eval(model,criterion,optimizer,rate_scheduler,val_loader,DEVICE,epoch,cf.epochSize,is_val=True)
+    train_loss, train_acc = Train_Eval(model, criterion, optimizer, rate_scheduler, train_loader, DEVICE, epoch, cf.epochSize) 
+    val_loss, val_acc = Train_Eval(model, criterion, optimizer, rate_scheduler, val_loader, DEVICE, epoch, cf.epochSize, is_val = True)
     print(f" {time.time() - n_tm:.0f}s")
 
     # if best_loss is None or val_loss < best_loss: # lossを更新したときのみ保存
     #     best_loss = val_loss
-    torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{str(epoch + 1).zfill(3)}.pth")
+    torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{epoch + 1:03}.pth") # モデルの保存
 
     # 学習の状況をCSVに保存
     with open(path_log, mode = "a") as f: f.write(f"{train_loss},{val_loss},{train_acc},{val_acc}")

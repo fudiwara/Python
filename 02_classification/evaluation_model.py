@@ -15,7 +15,7 @@ dataset_path = sys.argv[2] # テスト用の画像が入ったディレクトリ
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model().to(DEVICE)
-if DEVICE == "cuda":  model.load_state_dict(torch.load(model_path))
+if DEVICE == "cuda": model.load_state_dict(torch.load(model_path))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 
@@ -37,11 +37,10 @@ for i, (data, label) in enumerate(test_loader):
     label_list += label
     pred_list += pred
 
-    print("\r dataset loading: {} / {}".format(i + 1, len(test_loader)), end="", flush=True)
+    print(f"\r dataset loading: {i + 1} / {len(test_loader)}", end = "", flush = True)
 print()
 
 print(accuracy_score(label_list, pred_list)) # 正解率
 print(confusion_matrix(label_list, pred_list)) # 混同行列
 print(classification_report(label_list, pred_list)) # 各種評価指標
-
-print(f"done {time.time() - s_tm:.0f}s")
+print("done %.0fs" % (time.time() - s_tm))

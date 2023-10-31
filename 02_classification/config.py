@@ -29,7 +29,9 @@ data_transforms = T.Compose([
     T.ColorJitter(brightness = 0, contrast = 0, saturation = 0, hue = [-0.2, 0.2]),
     T.RandomHorizontalFlip(0.5),
     T.CenterCrop(cellSize),
-    T.ToTensor()])
+    T.ToTensor(),
+    T.RandomErasing(p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3))
+    ])
 
 def calc_acc(output, label): # 結果が一致するラベルの数をカウントする
     p_arg = torch.argmax(output, dim = 1)

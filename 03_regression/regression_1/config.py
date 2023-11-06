@@ -24,7 +24,7 @@ ext = [".jpg", ".jpeg", ".png", ".bmp", ".JPG", ".JPEG", ".PNG", ".BMP"]
 cellSize = 200
 
 # 繰り返す回数
-epochSize = 20
+epochSize = 30
 
 # 学習するときの小さいセットの数：元のデータ数によるが早く終わらせたい場合は100以上とかもあり
 batchSize = 50
@@ -48,14 +48,14 @@ class build_model(nn.Module):
         self.model_pre = models.efficientnet_v2_s(weights = models.EfficientNet_V2_S_Weights.DEFAULT)
         self.bn = nn.BatchNorm1d(1000)
         self.dropout = nn.Dropout(0.5)
-        self.classifier = nn.Linear(1000, 1)
+        self.regressor = nn.Linear(1000, 1)
         self.relu = nn.ReLU()
 
     def forward(self, input):
         mid_features = self.model_pre(input)
         x = self.bn(mid_features) # BNを追加
         x = self.dropout(x) # dropoutを追加
-        x = self.classifier(x)
+        x = self.regressor(x)
         x = self.relu(x) # ReLUの有無はほぼ影響がない
         return x
 

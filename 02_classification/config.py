@@ -10,10 +10,10 @@ from torchvision import models
 cellSize = 200
 
 # クラス全体の数
-classesSize = 10
+classesSize = 3
 
 # 繰り返す回数
-epochSize = 10
+epochSize = 3
 
 # ミニバッチのサイズ
 batchSize = 50

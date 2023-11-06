@@ -14,7 +14,7 @@ dataset_path = sys.argv[2] # テスト用の画像が入ったディレクトリ
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model().to(DEVICE)
-if DEVICE == "cuda":  model.load_state_dict(torch.load(model_path))
+if DEVICE == "cuda": model.load_state_dict(torch.load(model_path))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 
@@ -28,36 +28,34 @@ for i, (data, label) in enumerate(test_loader):
     data = data.to(DEVICE)
     label = label.numpy().tolist()
     outputs = model(data)
-    # print(label, outputs)
+    
     out_view = outputs.view(-1, outputs.shape[0])
     out_view = out_view.squeeze()
-    pred = out_view.to('cpu').detach().numpy().tolist()
+    pred = out_view.to("cpu").detach().numpy().tolist()
     label_list += label
     pred_list += pred
 
-    # if i == 3:break
-
-    print("\r dataset loading: {} / {}".format(i + 1, len(test_loader)), end="", flush=True)
+    print(f"\r dataset loading: {i + 1} / {len(test_loader)}", end="", flush=True)
 print()
 
 val_gt_list = np.array(label_list) * cf.val_rate
 val_gt_list = val_gt_list.reshape(-1)
 val_es_list = np.array(pred_list) * cf.val_rate
+
 val_abs_dist = []
-f = open("_plot.csv", mode = "w")
+f = open("_plot_rn.csv", mode = "w")
 for i in range(len(label_list)):
     dist_age = val_gt_list[i] - val_es_list[i]
     val_abs_dist.append(abs(dist_age))
 
-    f.write("%f,%f\n" % (val_gt_list[i], val_es_list[i]))
-    # print("%.0f %.2f %.0f" % (val_gt_list[i], val_es_list[i], abs(dist_age)))
+    f.write(f"{val_gt_list[i]},{val_es_list[i]}\n")
+f.close()
 
 val_abs_dist = np.array(val_abs_dist)
 
 print(np.mean(val_gt_list), np.var(val_gt_list), np.min(val_gt_list), np.max(val_gt_list))
 print(np.mean(val_es_list), np.var(val_es_list), np.min(val_es_list), np.max(val_es_list))
 print(np.mean(val_abs_dist), np.var(val_abs_dist), np.min(val_abs_dist), np.max(val_abs_dist))
-f.close()
 
 cor = np.corrcoef(val_gt_list, val_es_list)
 print(cor[0, 1])

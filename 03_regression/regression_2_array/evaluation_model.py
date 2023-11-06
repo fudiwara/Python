@@ -15,7 +15,7 @@ bs = 10
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model().to(DEVICE)
-if DEVICE == "cuda":  model.load_state_dict(torch.load(model_path))
+if DEVICE == "cuda": model.load_state_dict(torch.load(model_path))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 
@@ -28,28 +28,28 @@ label_list_0, pred_list_0, label_list_1, pred_list_1 = [], [], [], []
 for i, (data, lbls) in enumerate(test_loader):
     data = data.to(DEVICE)
     outputs = model(data)
-    lbls = lbls.to('cpu').detach().numpy().tolist()
-    pred = outputs.to('cpu').detach().numpy().tolist()
+    lbls = lbls.to("cpu").detach().numpy().tolist()
+    pred = outputs.to("cpu").detach().numpy().tolist()
 
     for b in range(len(lbls)):
         lbl_0 = lbls[b][0] * cf.val_rate_0
         lbl_1 = lbls[b][1] * cf.val_rate_1
         pred_val_0 = pred[b][0] * cf.val_rate_0
         pred_val_1 = pred[b][1] * cf.val_rate_1
-        # print(f"{lbl_0:.3f} {pred_val_0:.3f}  {lbl_1:.3f} {pred_val_1:.3f}")
+        
         label_list_0.append(lbl_0)
         label_list_1.append(lbl_1)
         pred_list_0.append(pred_val_0)
         pred_list_1.append(pred_val_1)
 
-    # if i == 2:break
-    print("\r dataset loading: {} / {}".format(i + 1, len(test_loader)), end="", flush=True)
+    print(f"\r dataset loading: {i + 1} / {len(test_loader)}", end="", flush=True)
 print()
 
 val_a_gt_list = np.array(label_list_0)
 val_a_es_list = np.array(pred_list_0)
 val_b_gt_list = np.array(label_list_1)
 val_b_es_list = np.array(pred_list_1)
+
 val_a_abs_dist, val_b_abs_dist = [], []
 f = open("_plot_rn.csv", mode = "w")
 for i in range(len(label_list_0)):
@@ -58,7 +58,7 @@ for i in range(len(label_list_0)):
     val_a_abs_dist.append(abs(dist_a))
     val_b_abs_dist.append(abs(dist_b))
 
-    f.write("%f,%f,%f,%f,%f,%f\n" % (val_a_gt_list[i], val_a_es_list[i], dist_a, val_b_gt_list[i], val_b_es_list[i], dist_b))
+    f.write(f"{val_a_gt_list[i]},{val_a_es_list[i]},{dist_a},{val_b_gt_list[i]},{val_b_es_list[i]},{dist_b}\n")
 f.close()
 
 val_a_abs_dist = np.array(val_a_abs_dist)

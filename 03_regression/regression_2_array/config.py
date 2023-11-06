@@ -53,13 +53,13 @@ class build_model(nn.Module):
         # self.model_pre = models.efficientnet_b0(weights = models.EfficientNet_B0_Weights.DEFAULT)
         self.bn = nn.BatchNorm1d(1000)
         self.dropout = nn.Dropout(0.5)
-        self.classifier = nn.Linear(1000, 2)
+        self.regressor = nn.Linear(1000, 2)
 
     def forward(self, input):
         mid_features = self.model_pre(input)
         x = self.bn(mid_features) # BNを追加
         x = self.dropout(x) # dropoutを追加
-        x = self.classifier(x)
+        x = self.regressor(x)
         return x
 
 if __name__ == "__main__":

@@ -52,16 +52,16 @@ class build_model(nn.Module):
         self.model_pre = models.efficientnet_v2_s(weights = models.EfficientNet_V2_S_Weights.DEFAULT)
         self.bn = nn.BatchNorm1d(1000)
         self.dropout = nn.Dropout(0.5)
-        self.classifier_0 = nn.Linear(1000, 1)
-        self.classifier_1 = nn.Linear(1000, 1)
+        self.regressor_0 = nn.Linear(1000, 1)
+        self.regressor_1 = nn.Linear(1000, 1)
 
     def forward(self, input):
         mid_features = self.model_pre(input)
         x = self.bn(mid_features) # BNを追加
         x = self.dropout(x) # dropoutを追加
 
-        out0 = self.classifier_0(x)
-        out1 = self.classifier_1(x)
+        out0 = self.regressor_0(x)
+        out1 = self.regressor_1(x)
 
         return out0, out1
 

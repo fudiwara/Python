@@ -13,12 +13,12 @@ image_dir_path = sys.argv[2] # 入力画像が入っているディレクトリ�
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model().to(DEVICE)
-if DEVICE == "cuda":  model.load_state_dict(torch.load(model_path))
+if DEVICE == "cuda": model.load_state_dict(torch.load(model_path))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
 
-exts = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG'] # 処理対象の拡張子
+exts = [".jpg", ".png", ".jpeg", ".JPG", ".PNG", ".JPEG"] # 処理対象の拡張子
 fileList = list(pathlib.Path(image_dir_path).iterdir())
 fileList.sort()
 for i in range(len(fileList)):
@@ -26,16 +26,13 @@ for i in range(len(fileList)):
         image_path = fileList[i]
 
         # 画像の読み込み・変換
-        img = Image.open(image_path).convert('RGB')
+        img = Image.open(image_path).convert("RGB")
         data = data_transforms(img)
-        data = data.unsqueeze(0)
-        # print(data)
-        # print(data.shape)
+        data = data.unsqueeze(0) # テンソルに変換してから1次元追加
 
         # 推定処理
         data = data.to(DEVICE)
         outputs = model(data)
-        # print(outputs)
 
         # 結果には正規化用の係数を乗算する
         pred_val_0 = outputs[0][0].item() * cf.val_rate_0

@@ -14,7 +14,7 @@ print(DEVICE)
 id_str = sys.argv[1]
 dataset_path = sys.argv[2]
 path_log = "_l_" + id_str + ".csv"
-log_dir = "log_" + id_str
+log_dir = "_log_" + id_str
 if not os.path.exists(log_dir): os.mkdir(log_dir) # モデルの保存用のフォルダ
 disp_score_t = ""
 
@@ -35,7 +35,7 @@ model = cf.build_model().to(DEVICE)
 criterion = nn.MSELoss()
 calc_acc = nn.L1Loss()
 # optimizer = optim.Adam(model.parameters())
-optimizer = optim.SGD(model.parameters(), lr = 0.01, momentum = 0.9)
+optimizer = optim.SGD(model.parameters(), lr = 0.001, momentum = 0.9)
 rate_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = cf.epochSize // 3, gamma = 0.1)
 
 def Train_Eval(model,criterion,optimizer,scheduler,data_loader,device,epoch,max_epoch,is_val = False):
@@ -71,7 +71,6 @@ def Train_Eval(model,criterion,optimizer,scheduler,data_loader,device,epoch,max_
         else: 
             print(f"\r {disp_score_t} l: {total_loss / (n + 1):.05f} a: {cf.val_rate * total_acc / counter:.03f}", end = "")
 
-        # if n == 20: break
     if is_val == False: scheduler.step()
 
     # 学習に使った画像の一部を保存

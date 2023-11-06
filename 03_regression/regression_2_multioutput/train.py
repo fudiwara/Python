@@ -14,7 +14,7 @@ print(DEVICE)
 id_str = sys.argv[1]
 dataset_path = sys.argv[2]
 path_log = "_l_" + id_str + ".csv"
-log_dir = "log_" + id_str
+log_dir = "_log_" + id_str
 if not os.path.exists(log_dir): os.mkdir(log_dir) # モデルの保存用のフォルダ
 disp_score_t = ""
 

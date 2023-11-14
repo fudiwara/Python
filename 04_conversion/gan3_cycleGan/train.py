@@ -119,7 +119,7 @@ for i in range(cf.epochSize):
         ll_D_A.append(loss_D_A.item())
         ll_D_B.append(loss_D_B.item())
 
-        print("\r {:03} / {:03} [ {:04} / {:04} ] GL A2B: {:.04f} B2A: {:.04f} DL A: {:.04f} B: {:.04f}".format(i + 1, cf.epochSize, n, itr_size, loss_G_A2B.item(), loss_G_B2A.item(), loss_D_A.item(), loss_D_B.item()), end = "")
+        print(f"\r {i + 1:03} / {cf.epochSize:03} [ {n + 1:04} / {itr_size:04} ] GL A2B: {loss_G_A2B.item():.04f} B2A: {loss_G_B2A.item():.04f} DL A: {loss_D_A.item():.04f} B: {loss_D_B.item():.04f}", end = "")
         # if n == 3: break
 
     gab_mse = statistics.mean(ll_G_A2B)
@@ -130,15 +130,17 @@ for i in range(cf.epochSize):
     db_mse = statistics.mean(ll_D_B)
     log_list.append([gab_mse, gba_mse, gca_l1, gcb_l1, da_mse, db_mse])
 
-    print("\r {:03} / {:03} [ {:04} / {:04} ] GL A2B: {:.04f} B2A: {:.04f} DL A: {:.04f} B: {:.04f} {:.01f}s".format(i + 1, cf.epochSize, n, itr_size, gab_mse, gba_mse, da_mse, db_mse, time.time() - n_tm))
+    print(f"\r {i + 1:03} / {cf.epochSize:03} [ {n + 1:04} / {itr_size:04} ] GL A2B: {gab_mse:.04f} B2A: {gba_mse:.04f} DL A: {da_mse:.04f} B: {db_mse:.04f} {time.time() - n_tm:.01f}s")
     
     # Gでの生成画像例とソース画像を連結してから保存
-    buf_save_imgs = torch.cat([real_A[:min(batch_len, 32)], fake_B[:min(batch_len, 32)]], dim=0)
-    torchvision.utils.save_image(buf_save_imgs, f"{log_dir}/_e_{id_str}_{i + 1:03}.png", value_range=(-1.0,1.0), normalize=True)
+    buf_save_imgs = torch.cat([real_A[:min(batch_len, 32)], fake_B[:min(batch_len, 32)]], dim = 0)
+    torchvision.utils.save_image(buf_save_imgs, f"{log_dir}/_e_{i + 1:03}.png", value_range=(-1.0, 1.0), normalize = True)
 
     # モデルの保存
-    # if 0 < i and (i % 10 == 0 or i == cf.epochSize - 1):
-    torch.save(G_A2B.state_dict(), f"{log_dir}/_m_{id_str}_{i + 1:03}.pth")
-    
-np.savetxt(path_log, np.array(log_list), delimiter = ",", fmt="%.5f") # ログの保存
-print("done %.0fs" % (time.time() - s_tm))
+    if 0 < i and i % 10 == 0:
+        torch.save(model_G.state_dict(), f"{log_dir}/_gen_{i:03}.pth")
+        # torch.save(model_D.state_dict(), f"{log_dir}/_dis_{i:03}.pth")
+
+torch.save(model_G.state_dict(), f"{log_dir}/_gen_{cf.epochSize:03}.pth")
+np.savetxt(path_log, np.array(log_list), delimiter = ",", fmt = "%.5f") # ログの保存
+print(f"done {time.time() - s_tm:.01f}s")

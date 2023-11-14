@@ -24,7 +24,7 @@ ext = [".jpg", ".jpeg", ".png", ".bmp", ".JPG", ".JPEG", ".PNG", ".BMP"]
 cellSize = 200
 
 # 繰り返す回数
-epochSize = 30
+epochSize = 15
 
 # 学習するときの小さいセットの数：元のデータ数によるが早く終わらせたい場合は100以上とかもあり
 batchSize = 50

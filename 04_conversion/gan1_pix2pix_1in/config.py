@@ -11,7 +11,7 @@ from torchvision import models
 cellSize = 192
 
 # 繰り返す回数
-epochSize = 200
+epochSize = 20
 
 # ミニバッチのサイズ
 batchSize = 10

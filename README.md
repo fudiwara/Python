@@ -1,7 +1,7 @@
 Python
 ---
-研究室の入門講座用ソースコード(Python)です
-使い方は [このページ](https://sites.google.com/do-johodai.ac.jp/clb) にある程度まとまっています。
+研究室の入門講座用ソースコード(Python)です  
+使い方は [このページ](https://sites.google.com/do-johodai.ac.jp/clb) にある程度まとまっています。  
 (閲覧には北海道情報大学のアカウントが必要です)
 
 #### 入門講座(Pythonプログラミング)

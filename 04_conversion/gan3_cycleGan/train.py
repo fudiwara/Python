@@ -52,8 +52,8 @@ fake_B_buffer = cf.ImagePool()
 # 学習
 dataset = ld.load_datasets(dataset_path_src, dataset_path_target)
 itr_size = cf.dataset_size // cf.batchSize
-log_list = [] # エラー推移の記録用
 s_tm = time.time()
+with open(path_log, mode = "w") as f: f.write("gab_mse,gba_mse,gca_l1,gcb_l1,da_mse,db_mse\n") # 損失推移の記録用
 for i in range(cf.epochSize):
     ll_G_A2B, ll_G_B2A, ll_G_CA, ll_G_CB, ll_D_A, ll_D_B = [], [], [], [], [], []
     n_tm = time.time()
@@ -128,19 +128,19 @@ for i in range(cf.epochSize):
     gcb_l1 = statistics.mean(ll_G_CB)
     da_mse = statistics.mean(ll_D_A)
     db_mse = statistics.mean(ll_D_B)
-    log_list.append([gab_mse, gba_mse, gca_l1, gcb_l1, da_mse, db_mse])
-
     print(f"\r {i + 1:03} / {cf.epochSize:03} [ {n + 1:04} / {itr_size:04} ] GL A2B: {gab_mse:.04f} B2A: {gba_mse:.04f} DL A: {da_mse:.04f} B: {db_mse:.04f} {time.time() - n_tm:.01f}s")
     
+    # 学習の状況をCSVに保存
+    with open(path_log, mode = "a") as f: f.write(f"{gab_mse},{gba_mse},{gca_l1},{gcb_l1},{da_mse},{db_mse}\n")
+
     # Gでの生成画像例とソース画像を連結してから保存
     buf_save_imgs = torch.cat([real_A[:min(batch_len, 32)], fake_B[:min(batch_len, 32)]], dim = 0)
     torchvision.utils.save_image(buf_save_imgs, f"{log_dir}/_e_{i + 1:03}.png", value_range=(-1.0, 1.0), normalize = True)
 
     # モデルの保存
-    if 0 < i and i % 10 == 0:
-        torch.save(model_G.state_dict(), f"{log_dir}/_gen_{i:03}.pth")
-        # torch.save(model_D.state_dict(), f"{log_dir}/_dis_{i:03}.pth")
+    # if 0 < i and i % 10 == 0:
+    #     torch.save(model_G.state_dict(), f"{log_dir}/_gen_{i:03}.pth")
+    #     torch.save(model_D.state_dict(), f"{log_dir}/_dis_{i:03}.pth") # こちらは基本的には使わない
 
 torch.save(model_G.state_dict(), f"{log_dir}/_gen_{cf.epochSize:03}.pth")
-np.savetxt(path_log, np.array(log_list), delimiter = ",", fmt = "%.5f") # ログの保存
 print(f"done {time.time() - s_tm:.01f}s")

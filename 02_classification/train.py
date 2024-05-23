@@ -55,7 +55,7 @@ def Train_Eval(model, criterion, optimizer, scheduler, data_loader, device, epoc
         else:
             output = model(data)
         
-        loss = criterion(output,label)
+        loss = criterion(output, label)
         total_loss += loss.item()
         total_acc += cf.calc_acc(output, label)
 

@@ -18,8 +18,11 @@ thDetection = 0.6
 # データセットを学習用と評価用に分割する際の割合
 splitRateTrain = 0.8
 
-def build_model():
-    model = torchvision.models.detection.fcos_resnet50_fpn(weights="DEFAULT")
+def build_model(sw_train_eval):
+    if sw_train_eval == "train":
+        model = torchvision.models.detection.fcos_resnet50_fpn(weights="DEFAULT")
+    else:
+        model = torchvision.models.detection.fcos_resnet50_fpn()
 
     # 事前訓練済みのヘッドを新しいものと置き換える
     num_anchors = model.head.classification_head.num_anchors

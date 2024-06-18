@@ -1,10 +1,10 @@
 import sys, os, time
 sys.dont_write_bytecode = True
 import torch
-from torch import nn
 import torchvision.transforms as T
+import cv2
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 import pathlib
 
 import config as cf
@@ -20,9 +20,7 @@ if(not output_dir.exists()): output_dir.mkdir() # ディレクトリ生成
 np.set_printoptions(precision=3, suppress=True) # 指数表現をやめて小数点以下の桁数を指定する
 
 # フォントの設定
-textsize = 16
-linewidth = 3
-font = ImageFont.truetype("_FiraMono-Medium.otf", size=textsize)
+font_scale = cv2.getFontScaleFromHeight(cv2.FONT_HERSHEY_DUPLEX, 11, 1)
 
 # アノテーションデータの読み込み
 image_filenames = []
@@ -43,7 +41,6 @@ with open(annotations_path, "r") as f:# self.filelines = f.read().split('\n')
                 rects.append([x0, y0, x1, y1, c_num])
 
             rect_info.append(rects)
-
 
 def search_neighbourhood(x0, y0, x1, y1, ps): # x, yに一番近い点のIDを得る
     L = np.array([])
@@ -114,7 +111,7 @@ for idx in range(len(image_filenames)):
     labels = outputs[0]["labels"].detach().cpu().numpy()
     # print(bboxs, scores, labels)
 
-    draw = ImageDraw.Draw(img)
+    img = cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR)
     det_objs = 0
     for i in range(len(scores)):
         b = bboxs[i]
@@ -123,22 +120,18 @@ for idx in range(len(image_filenames)):
         if prd_val < cf.thDetection: break # 閾値以下が出現した段階で終了
         prd_cls = labels[i]
 
-        x0, y0 = b[0], b[1]
-        p0 = (x0, y0)
-        p1 = (b[2], b[3])
+        x0, y0 = int(b[0]), int(b[1])
+        p0, p1 = (x0, y0), (int(b[2]), int(b[3]))
         print(prd_cls, prd_val, p0, p1)
         
-        if prd_cls == 1: box_col = (255, 0, 0)
-        else: box_col = (0, 255, 0)
+        if prd_cls == 1: box_col = (0, 255, 0)
+        else: box_col = (0, 0, 255)
 
-        draw.rectangle((p0, p1), outline=box_col, width=linewidth) # 枠の矩形描画
         text = f" {prd_cls}  {prd_val:.3f} " # クラスと確率
-        # txw, txh = draw.textsize(text, font=font) # 表示文字列のサイズ 
-        left, top, right, bottom = draw.textbbox((0, 0), text, font=font) # 表示文字列のサイズ
-        txw, txh = right - left, bottom - top
-        txpos = (x0, y0 - textsize - linewidth // 2) # 表示位置
-        draw.rectangle([txpos, (x0 + txw, y0)], outline=box_col, fill=box_col, width=linewidth)
-        draw.text(txpos, text, font=font, fill=(255, 255, 255))
+        (t_w, t_h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得
+        cv2.rectangle(img, p0, p1, box_col, thickness = 2) # 検出領域の矩形
+        cv2.rectangle(img, (x0, y0 - t_h), (x0 + t_w, y0), box_col, thickness = -1) # テキストの背景の矩形
+        cv2.putText(img, text, p0, cv2.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv2.LINE_AA)
 
         val_iou = rect_comp_rectinfo(b[0], b[1], b[2], b[3], prd_cls, rect_info[idx])
         # print(val_iou)
@@ -164,7 +157,7 @@ for idx in range(len(image_filenames)):
 
     output_filename = f"{file_name.stem}_det.png"
     output_img_path = output_dir / output_filename
-    img.save(output_img_path)
+    cv2.imwrite(output_img_path, img)
     proc_time.append((time.time() - s_tm))
 
 det_rate = np.sum(det_just_num) / len(image_filenames)

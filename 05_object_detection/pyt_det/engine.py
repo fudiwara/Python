@@ -131,8 +131,8 @@ def evaluate(model, data_loader, device):
     ap = float(l[-1])
     l = logls[10].split(" ")
     ar = float(l[-1])
-    if ap + ar == 0: f1_v = 2 * ap * ar / (ap + ar)
-    else: f1_v = 0
+    if ap + ar == 0: f1_v = 0
+    else: f1_v = 2 * ap * ar / (ap + ar)
     print(f"  f1: {f1_v:.04f}")
     print(logls[2].lstrip())
     print(logls[10].lstrip())

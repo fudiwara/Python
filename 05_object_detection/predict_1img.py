@@ -2,6 +2,7 @@ import sys, os
 sys.dont_write_bytecode = True
 import torch
 import torchvision.transforms as T
+import cv2
 import numpy as np
 from PIL import Image
 import pathlib

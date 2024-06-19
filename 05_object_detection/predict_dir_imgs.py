@@ -80,7 +80,7 @@ for f in range(len(fileList)):
 
         output_filename = f"{file_name.stem}_det.png"
         output_img_path = output_dir / output_filename
-        cv2.imwrite(output_img_path, img)
+        cv2.imwrite(str(output_img_path), img)
         proc_time.append((time.time() - s_tm))
 
 proc_time = np.array(proc_time)

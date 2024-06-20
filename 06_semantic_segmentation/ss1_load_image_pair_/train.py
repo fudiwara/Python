@@ -1,8 +1,10 @@
 import sys, os, time
 sys.dont_write_bytecode = True
+
 import torch
 from torch.utils.data import DataLoader
 from pyt_det.engine import train_one_epoch, evaluate
+
 import config as cf
 import load_dataset_pair as ld
 
@@ -28,8 +30,8 @@ val_dataset = torch.utils.data.Subset(val_dataset, indices[train_data_size:])
 print(len(indices), len(train_dataset), len(val_dataset))
 
 # 訓練データと評価データのデータロード用オブジェクトを用意
-train_loader = DataLoader(train_dataset, batch_size=cf.batchSize, shuffle=True, num_workers=int(os.cpu_count() / 2), collate_fn=ld.collate_fn)
-val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=int(os.cpu_count() / 2), collate_fn=ld.collate_fn)
+train_loader = DataLoader(train_dataset, batch_size=cf.batchSize, shuffle=True, num_workers=os.cpu_count() // 2, collate_fn=ld.collate_fn)
+val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=os.cpu_count() // 2, collate_fn=ld.collate_fn)
 
 # モデル、損失関数、最適化関数、収束率の定義
 model = cf.build_model("train").to(DEVICE)

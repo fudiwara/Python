@@ -4,19 +4,22 @@ import torch
 import torchvision
 
 # 繰り返す回数
-epochSize = 10
+epochSize = 20
 
 # 学習時のバッチのサイズ
 batchSize = 4
 
 # カテゴリの総数 (背景の0を含めた合計)
-numClasses = 2
+numClasses = 14
 
 # 検出の閾値
 thDetection = 0.6
 
 # データセットを学習用と評価用に分割する際の割合
-splitRateTrain = 0.8
+splitRateTrain = 0.98
+
+cate_name = ["background", "short sleeved shirt", "long sleeved shirt", "short sleeved outwear", "long sleeved outwear", "vest", "sling", "shorts", "trousers", "skirt", "short sleeved dress", "long sleeved dress", "vest dress", "sling dress"]
+box_col = [(0, 0, 0), (192, 127, 0), (192, 0, 127), (0, 192, 127), (127, 192, 0), (127, 0, 192), (0, 127, 192), (255, 127, 0), (255, 0, 127), (0, 255, 127), (127, 255, 0), (127, 0, 255), (0, 127, 255), (0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
 
 def build_model(sw_train_eval):
     if sw_train_eval == "train":

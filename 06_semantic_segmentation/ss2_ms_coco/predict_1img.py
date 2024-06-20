@@ -1,12 +1,13 @@
 import sys, os
 sys.dont_write_bytecode = True
-import torch
-from torch import nn
-import torchvision.transforms as T
-import numpy as np
-from PIL import Image, ImageDraw, ImageFont
 import pathlib
+
 import cv2
+import numpy as np
+from PIL import Image
+
+import torch
+import torchvision.transforms as T
 
 import config as cf
 
@@ -18,9 +19,7 @@ file_name = pathlib.Path(image_path)
 np.set_printoptions(precision=3, suppress=True) # 指数表現をやめて小数点以下の桁数を指定する
 
 # フォントの設定
-textsize = 16
-linewidth = 3
-font = ImageFont.truetype("_FiraMono-Medium.otf", size=textsize)
+font_scale = cv2.getFontScaleFromHeight(cv2.FONT_HERSHEY_DUPLEX, 11, 1)
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")
@@ -33,7 +32,6 @@ data_transforms = T.Compose([T.ToTensor()])
 
 # 画像の読み込み・変換
 img = Image.open(image_path).convert('RGB') # カラー指定で開く
-i_w, i_h = img.size
 data = data_transforms(img)
 data = data.unsqueeze(0) # テンソルに変換してから1次元追加
 
@@ -46,9 +44,8 @@ labels = outputs[0]["labels"].detach().cpu().numpy()
 masks = outputs[0]["masks"].detach().cpu().numpy()
 print(masks.shape)
 # print(bboxs, scores, labels)
-
-print(len(scores))
-draw = ImageDraw.Draw(img)
+# print(len(scores))
+img = cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR)
 for i in range(len(scores)):
     b = bboxs[i]
     # print(b)
@@ -56,27 +53,21 @@ for i in range(len(scores)):
     if prd_val < cf.thDetection: continue # 閾値以下は飛ばす
     prd_cls = labels[i]
 
-    x0, y0 = b[0], b[1]
-    p0 = (x0, y0)
-    p1 = (b[2], b[3])
+    x0, y0 = int(b[0]), int(b[1])
+    p0, p1 = (x0, y0), (int(b[2]), int(b[3]))
     print(prd_cls, prd_val, p0, p1)
-    
-    if prd_cls == 1: box_col = (255, 0, 0)
-    else: box_col = (0, 255, 0)
 
-    draw.rectangle((p0, p1), outline=box_col, width=linewidth) # 枠の矩形描画
+    cid = prd_cls % len(cf.box_col)
     text = f" {prd_cls}  {prd_val:.3f} " # クラスと確率
-    # txw, txh = draw.textsize(text, font=font) # 表示文字列のサイズ
-    left, top, right, bottom = draw.textbbox((0, 0), text, font=font) # 表示文字列のサイズ
-    txw, txh = right - left, bottom - top
-    txpos = (x0, y0 - textsize - linewidth // 2) # 表示位置
-    draw.rectangle([txpos, (x0 + txw, y0)], outline=box_col, fill=box_col, width=linewidth)
-    draw.text(txpos, text, font=font, fill=(255, 255, 255))
+    (t_w, t_h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得
+    cv2.rectangle(img, p0, p1, cf.box_col[cid], thickness = 2) # 検出領域の矩形
+    cv2.rectangle(img, (x0, y0 - t_h), (x0 + t_w, y0), cf.box_col[cid], thickness = -1) # テキストの背景の矩形
+    cv2.putText(img, text, p0, cv2.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv2.LINE_AA)
 
-    print(masks[i])
-    msk_img = masks[i][0]
-    msk_img = (msk_img*255).astype(np.uint8)
-    outputFIlename = f"{file_name.stem}_{i}.png"
-    cv2.imwrite(outputFIlename, msk_img) 
+    # print(masks[i])
+    # msk_img = masks[i][0]
+    # msk_img = (msk_img * 255).astype(np.uint8)
+    # outputFIlename = f"{file_name.stem}_{i}.png"
+    # cv2.imwrite(outputFIlename, msk_img) # マスク画像の保存
 
-img.save(f"{file_name.stem}_det.png")
+cv2.imwrite(f"{file_name.stem}_det.png", img)

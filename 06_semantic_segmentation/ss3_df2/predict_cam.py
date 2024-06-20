@@ -1,21 +1,24 @@
 import sys, time
 sys.dont_write_bytecode = True
-import torch
-from torch import nn
-import torchvision.transforms as T
+
 import cv2
-from PIL import Image, ImageFont, ImageDraw
 import numpy as np
-import pathlib
+from PIL import Image
+
+import torch
+import torchvision.transforms as T
 
 import config as cf
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(DEVICE)
 model_path = sys.argv[1] # モデルのパス
-
 cam_num = int(sys.argv[2]) # カメラのID
 cap = cv2.VideoCapture(cam_num)
+box_col = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0), (255, 0, 255), (0, 255, 255), (255, 127, 0), (255, 0, 127), (0, 255, 127), (127, 255, 0), (127, 0, 255), (0, 127, 255), (192, 127, 0), (192, 0, 127), (0, 192, 127), (127, 192, 0), (127, 0, 192), (0, 127, 192)]
+
+# フォントの設定
+font_scale = cv2.getFontScaleFromHeight(cv2.FONT_HERSHEY_DUPLEX, 11, 1)
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")
@@ -25,11 +28,6 @@ model.to(DEVICE)
 model.eval()
 
 data_transforms = T.Compose([T.ToTensor()])
-
-# フォントの設定
-textsize = 16
-linewidth = 3
-font = ImageFont.truetype("_FiraMono-Medium.otf", size=textsize)
 
 sw, sh = 640, 480
 ssize = (sw, sh)
@@ -54,7 +52,6 @@ while True:
         labels = outputs[0]["labels"].detach().cpu().numpy()
         # print(bboxs, scores, labels)
 
-        draw = ImageDraw.Draw(img)
         for i in range(len(scores)):
             b = bboxs[i]
             # print(b)
@@ -62,30 +59,20 @@ while True:
             if prd_val < cf.thDetection: continue # 閾値以下が出現した段階で終了
             prd_cls = labels[i]
 
-            x0, y0 = b[0], b[1]
-            p0 = (x0, y0)
-            p1 = (b[2], b[3])
+            x0, y0 = int(b[0]), int(b[1])
+            p0, p1 = (x0, y0), (int(b[2]), int(b[3]))
             print(prd_cls, prd_val, p0, p1)
-            
-            if prd_cls == 1: box_col = (255, 0, 0)
-            else: box_col = (0, 255, 0)
 
-            draw.rectangle((p0, p1), outline=box_col, width=linewidth) # 枠の矩形描画
             text = f" {prd_cls}  {prd_val:.3f} " # クラスと確率
-            # txw, txh = draw.textsize(text, font=font) # 表示文字列のサイズ
-            left, top, right, bottom = draw.textbbox((0, 0), text, font=font) # 表示文字列のサイズ
-            txw, txh = right - left, bottom - top
-            txpos = (x0, y0 - textsize - linewidth // 2) # 表示位置
-            draw.rectangle([txpos, (x0 + txw, y0)], outline=box_col, fill=box_col, width=linewidth)
-            draw.text(txpos, text, font=font, fill=(255, 255, 255))
-
-        dst_img = np.array(img, dtype=np.uint8)
-        dst_img = cv2.cvtColor(dst_img, cv2.COLOR_RGB2BGR)
+            (t_w, t_h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得
+            cv2.rectangle(frame, p0, p1, cf.box_col[prd_cls], thickness = 2) # 検出領域の矩形
+            cv2.rectangle(frame, (x0, y0 - t_h), (x0 + t_w, y0), cf.box_col[prd_cls], thickness = -1) # テキストの背景の矩形
+            cv2.putText(frame, text, p0, cv2.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv2.LINE_AA)
         
         fps_val = time.time() - s_tm
-        cv2.putText(dst_img, f"{fps_val:.3f}", (5, 30), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255,0), 1, cv2.LINE_AA)
+        cv2.putText(frame, f"{fps_val:.3f}", (5, 30), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255,0), 1, cv2.LINE_AA)
 
-    cv2.imshow("image", dst_img)
+    cv2.imshow("image", frame)
 
     # キー入力を1ms待って、kキーの場合(27 / ESC)だったらBreakする
     key = cv2.waitKey(1)

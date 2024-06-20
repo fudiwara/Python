@@ -12,7 +12,7 @@ model_path = sys.argv[1] # モデルのパス
 image_path = sys.argv[2] # 推定する画像のパス
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
-model = cf.build_model().to(DEVICE)
+model = cf.build_model("eval").to(DEVICE)
 if DEVICE == "cuda": model.load_state_dict(torch.load(model_path))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()

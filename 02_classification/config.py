@@ -39,17 +39,15 @@ def calc_acc(output, label): # 結果が一致するラベルの数をカウン�
 
 class build_model(nn.Module):
     def __init__(self):
-        super(build_model, self).__init__()
-        self.model_pre = models.efficientnet_v2_s(weights = models.EfficientNet_V2_S_Weights.DEFAULT)
-        self.bn = nn.BatchNorm1d(1000)
-        self.dropout = nn.Dropout(0.5)
-        self.classifier = nn.Linear(1000, classesSize)
+        super(build_model, self).__init__(sw_train_eval):
+            if sw_train_eval == "train":
+                self.model_pre = models.efficientnet_v2_s(weights = models.EfficientNet_V2_S_Weights.DEFAULT)
+            else:
+                self.model_pre = models.efficientnet_v2_s()
+        self.model_pre.classifier[1] = nn.Linear(1280, classesSize, bias = True)
 
     def forward(self, input):
-        mid_features = self.model_pre(input)
-        x = self.bn(mid_features) # BNを追加
-        x = self.dropout(x) # dropoutを追加
-        x = self.classifier(x)
+        x = self.model_pre(input)
         return x
 
 if __name__ == "__main__":

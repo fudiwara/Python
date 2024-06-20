@@ -31,7 +31,7 @@ train_loader = DataLoader(train_dataset, batch_size = cf.batchSize, num_workers 
 val_loader = DataLoader(val_dataset, batch_size = cf.batchSize, num_workers = os.cpu_count(), pin_memory=True, drop_last=True)
 
 # モデル、損失関数、最適化関数、収束率の定義
-model = cf.build_model().to(DEVICE)
+model = cf.build_model("train").to(DEVICE)
 criterion = nn.MSELoss()
 calc_acc = nn.L1Loss()
 # optimizer = optim.Adam(model.parameters())
@@ -79,7 +79,7 @@ def Train_Eval(model,criterion,optimizer,scheduler,data_loader,device,epoch,max_
     return total_loss / (n + 1), cf.val_rate * total_acc / counter
 
 best_loss = None
-with open(path_log, mode = "w") as f: f.write("")
+with open(path_log, mode = "w") as f: f.write("train_loss,val_loss,train_acc,val_acc")
 s_tm = time.time()
 
 for epoch in range(cf.epochSize):

@@ -12,15 +12,14 @@ model_path = sys.argv[1] # モデルのパス
 image_dir_path = sys.argv[2] # 入力画像が入っているディレクトリのパス
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
-model = cf.build_model().to(DEVICE)
+model = cf.build_model("eval").to(DEVICE)
 if DEVICE == "cuda": model.load_state_dict(torch.load(model_path))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
 
 exts = [".jpg", ".png", ".jpeg", ".JPG", ".PNG", ".JPEG"] # 処理対象の拡張子
-fileList = list(pathlib.Path(image_dir_path).iterdir())
-fileList.sort()
+fileList = sorted(list(pathlib.Path(image_dir_path).iterdir()))
 for i in range(len(fileList)):
     if fileList[i].is_file() and (fileList[i].suffix in exts): # ファイルのみ処理する
         image_path = fileList[i]

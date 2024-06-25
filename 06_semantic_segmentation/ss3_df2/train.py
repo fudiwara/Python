@@ -34,9 +34,10 @@ val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=in
 # モデル、損失関数、最適化関数、収束率の定義
 model = cf.build_model("train").to(DEVICE)
 params = [p for p in model.parameters() if p.requires_grad]
-optimizer = torch.optim.SGD(params, lr=0.001, momentum=0.9, weight_decay=0.0005)
+# optimizer = torch.optim.SGD(params, lr=0.001, momentum=0.9, weight_decay=0.0005)
 # optimizer = torch.optim.SGD(params, lr=0.0005, momentum=0.9, weight_decay=0.0005)
 # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1) # 3エポックごとに学習率が1/10
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0002, betas=(0.5, 0.999))
 
 with open(path_log, mode = "w") as f: f.write("loss,f1\n")
 s_tm = time.time()

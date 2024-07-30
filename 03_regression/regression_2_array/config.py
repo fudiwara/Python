@@ -47,19 +47,16 @@ data_transforms = T.Compose([
     T.ToTensor()])
 
 class build_model(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.model_pre = models.efficientnet_v2_s(weights = models.EfficientNet_V2_S_Weights.DEFAULT)
-        # self.model_pre = models.efficientnet_b0(weights = models.EfficientNet_B0_Weights.DEFAULT)
-        self.bn = nn.BatchNorm1d(1000)
-        self.dropout = nn.Dropout(0.5)
-        self.regressor = nn.Linear(1000, 2)
+    def __init__(self, sw_train_eval):
+        super().__init__():
+        if sw_train_eval == "train":
+            self.model_pre = models.efficientnet_v2_s(weights = "DEFAULT")
+        else:
+            self.model_pre = models.efficientnet_v2_s()
+        self.model_pre.classifier[1] = nn.Linear(1280, 2, bias = True)
 
     def forward(self, input):
-        mid_features = self.model_pre(input)
-        x = self.bn(mid_features) # BNを追加
-        x = self.dropout(x) # dropoutを追加
-        x = self.regressor(x)
+        x = self.model_pre(input)
         return x
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ dataset_path = sys.argv[2] # テスト用の画像が入ったディレクトリ
 bs = 10
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
-model = cf.build_model().to(DEVICE)
+model = cf.build_model("eval").to(DEVICE)
 if DEVICE == "cuda": model.load_state_dict(torch.load(model_path))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()

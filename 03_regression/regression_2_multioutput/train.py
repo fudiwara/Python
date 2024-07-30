@@ -30,7 +30,7 @@ train_loader = DataLoader(train_dataset, batch_size = cf.batchSize, num_workers 
 val_loader = DataLoader(val_dataset, batch_size = cf.batchSize, num_workers = os.cpu_count(), pin_memory=True, drop_last=True)
 
 # モデル、損失関数、最適化関数、収束率の定義
-model = cf.build_model().to(DEVICE)
+model = cf.build_model("train").to(DEVICE)
 criterion = nn.MSELoss()
 calc_acc = nn.L1Loss()
 # optimizer = optim.Adam(model.parameters())

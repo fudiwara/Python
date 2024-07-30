@@ -86,9 +86,8 @@ def init_weights(net):
             torch.nn.init.constant_(net.bias.data, 0.0)
 
 class ResidualBlock(nn.Module):
-    """Some Information about ResidualBlock"""
     def __init__(self):
-        super(ResidualBlock, self).__init__()
+        super().__init__()
         self.block = nn.Sequential(
             nn.ReflectionPad2d(1),
             nn.Conv2d(cellSize,cellSize,kernel_size=3,stride=1),
@@ -105,9 +104,8 @@ class ResidualBlock(nn.Module):
         return x
 
 class Generator(nn.Module):
-    """Some Information about Generator"""
     def __init__(self, img_channel, res_block):
-        super(Generator, self).__init__()
+        super().__init__()
         self.encode_block = nn.Sequential(
             nn.ReflectionPad2d(3),
             nn.Conv2d(img_channel,64,kernel_size=7,stride=1),
@@ -157,9 +155,8 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    """Some Information about Discriminator"""
     def __init__(self,img_channel):
-        super(Discriminator, self).__init__()
+        super().__init__()
         self.block = nn.Sequential(
             nn.Conv2d(img_channel,64,kernel_size=4,stride=2,padding=1),
             nn.LeakyReLU(0.2,inplace=True),

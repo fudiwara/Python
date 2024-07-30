@@ -47,9 +47,12 @@ data_transforms = T.Compose([
     T.ToTensor()])
 
 class build_model(nn.Module):
-    def __init__(self):
+    def __init__(self, sw_train_eval):
         super().__init__()
-        self.model_pre = models.efficientnet_v2_s(weights = models.EfficientNet_V2_S_Weights.DEFAULT)
+        if sw_train_eval == "train":
+            self.model_pre = models.efficientnet_v2_s(weights = "DEFAULT")
+        else:
+            self.model_pre = models.efficientnet_v2_s()
         self.bn = nn.BatchNorm1d(1000)
         self.dropout = nn.Dropout(0.5)
         self.regressor_0 = nn.Linear(1000, 1)

@@ -38,12 +38,12 @@ def calc_acc(output, label): # 結果が一致するラベルの数をカウン�
     return torch.sum(label == p_arg)
 
 class build_model(nn.Module):
-    def __init__(self):
-        super(build_model, self).__init__(sw_train_eval):
-            if sw_train_eval == "train":
-                self.model_pre = models.efficientnet_v2_s(weights = models.EfficientNet_V2_S_Weights.DEFAULT)
-            else:
-                self.model_pre = models.efficientnet_v2_s()
+    def __init__(self, sw_train_eval):
+        super().__init__()
+        if sw_train_eval == "train":
+            self.model_pre = models.efficientnet_v2_s(weights = "DEFAULT")
+        else:
+            self.model_pre = models.efficientnet_v2_s()
         self.model_pre.classifier[1] = nn.Linear(1280, classesSize, bias = True)
 
     def forward(self, input):

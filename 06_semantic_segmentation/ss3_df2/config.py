@@ -7,7 +7,7 @@ import torchvision
 epochSize = 10
 
 # 学習時のバッチのサイズ
-batchSize = 4
+batchSize = 3
 
 # カテゴリの総数 (背景の0を含めた合計)
 numClasses = 14
@@ -23,9 +23,9 @@ box_col = [(0, 0, 0), (192, 127, 0), (192, 0, 127), (0, 192, 127), (127, 192, 0)
 
 def build_model(sw_train_eval):
     if sw_train_eval == "train":
-        model = torchvision.models.detection.maskrcnn_resnet50_fpn(weights="DEFAULT")
+        model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2(weights="DEFAULT")
     else:
-        model = torchvision.models.detection.maskrcnn_resnet50_fpn()
+        model = torchvision.models.detection.maskrcnn_resnet50_fpn_v2()
 
     # 分類器にインプットする特徴量の数を取得
     in_features = model.roi_heads.box_predictor.cls_score.in_features
@@ -41,8 +41,8 @@ def build_model(sw_train_eval):
     return model
 
 if __name__ == "__main__":
-    from torchsummary import summary
+    # from torchsummary import summary
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    mdl = build_model("train")
+    mdl = build_model("eval")
     print(mdl)
     # summary(mdl, (3, imageSize, imageSize))

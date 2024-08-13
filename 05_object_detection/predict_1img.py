@@ -14,7 +14,7 @@ print(DEVICE)
 model_path = sys.argv[1] # モデルのパス
 image_path = sys.argv[2] # 入力画像のパス
 file_name = pathlib.Path(sys.argv[2])
-np.set_printoptions(precision=3, suppress=True) # 指数表現をやめて小数点以下の桁数を指定する
+np.set_printoptions(precision = 3, suppress = True) # 指数表現をやめて小数点以下の桁数を指定する
 
 # フォントの設定
 font_scale = cv2.getFontScaleFromHeight(cv2.FONT_HERSHEY_DUPLEX, 11, 1)

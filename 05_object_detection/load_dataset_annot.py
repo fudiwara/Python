@@ -32,7 +32,7 @@ class ImageFolderAnnotationRect(Dataset):
         self.img_dir_path = pathlib.Path(img_dir_path)
         self.transforms = transforms
 
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self.filelines)
 
     def __getitem__(self, idx):

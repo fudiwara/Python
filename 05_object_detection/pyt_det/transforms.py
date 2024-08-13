@@ -26,7 +26,6 @@ class Compose:
             image, target = t(image, target)
         return image, target
 
-
 class RandomHorizontalFlip(T.RandomHorizontalFlip):
     def forward(
         self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
@@ -44,6 +43,22 @@ class RandomHorizontalFlip(T.RandomHorizontalFlip):
                     target["keypoints"] = keypoints
         return image, target
 
+class RandomVerticalFlip(T.RandomVerticalFlip):
+    def forward(
+        self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
+    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+        if torch.rand(1) < self.p:
+            image = F.vflip(image)
+            if target is not None:
+                _, height, width = F.get_dimensions(image)
+                target["boxes"][:, [1, 3]] = height - target["boxes"][:, [3, 1]]
+                if "masks" in target:
+                    target["masks"] = target["masks"].flip(1)
+                if "keypoints" in target:
+                    keypoints = target["keypoints"]
+                    keypoints = _flip_coco_person_keypoints(keypoints, width)
+                    target["keypoints"] = keypoints
+        return image, target
 
 class PILToTensor(nn.Module):
     def forward(

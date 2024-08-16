@@ -30,6 +30,8 @@ model.to(DEVICE)
 model.eval()
 
 exts = [".jpg", ".png", ".jpeg", ".JPG", ".PNG", ".JPEG"] # 処理対象の拡張子
+colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
+clr_num = len(colors)
 data_transforms = T.Compose([T.ToTensor()])
 
 proc_time = []
@@ -65,13 +67,10 @@ for f in range(len(fileList)):
         p0, p1 = (x0, y0), (int(b[2]), int(b[3]))
         print(prd_cls, prd_val, p0, p1)
         
-        if prd_cls == 1: box_col = (0, 255, 0)
-        else: box_col = (0, 0, 255)
-
         text = f" {prd_cls}  {prd_val:.3f} " # クラスと確率
         (t_w, t_h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得
-        cv2.rectangle(img, p0, p1, box_col, thickness = 2) # 検出領域の矩形
-        cv2.rectangle(img, (x0, y0 - t_h), (x0 + t_w, y0), box_col, thickness = -1) # テキストの背景の矩形
+        cv2.rectangle(img, p0, p1, colors[prd_cls % clr_num], thickness = 2) # 検出領域の矩形
+        cv2.rectangle(img, (x0, y0 - t_h), (x0 + t_w, y0), colors[prd_cls % clr_num], thickness = -1) # テキストの背景の矩形
         cv2.putText(img, text, p0, cv2.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv2.LINE_AA)
 
     output_filename = f"{file_name.stem}_det.png"

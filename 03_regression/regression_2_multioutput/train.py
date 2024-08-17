@@ -96,10 +96,11 @@ for epoch in range(cf.epochSize):
 
     # if best_loss is None or val_loss < best_loss: # lossを更新したときのみ保存
     #     best_loss = val_loss
-    torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{epoch + 1:03}.pth") # モデルの保存
+    # 毎エポックモデルの保存する場合 (とりあえずコメントアウト)
+    # torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{epoch + 1:03}.pth")
 
     # 学習の状況をCSVに保存
     with open(path_log, mode = "a") as f: f.write(f"{train_loss},{val_loss},{train_acc},{val_acc}\n")
 
-# torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{cf.epochSize:03}.pth") # モデルの保存
+torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{cf.epochSize:03}.pth") # モデルの保存
 print(f"done {time.time() - s_tm:.0f}s")

@@ -44,8 +44,11 @@ for epoch in range(cf.epochSize):
     loss = train_one_epoch(model, optimizer, train_loader, DEVICE, epoch, print_freq=1) # 学習
     lr_scheduler.step() # 学習率の更新
     f1v = evaluate(model, val_loader, device=DEVICE) # テストデータセットの評価
-    torch.save(model.state_dict(), f"{output_dir}/_m_{id_str}_{epoch + 1:03}.pth") # モデルの保存
+    # 毎エポックモデルの保存する場合 (とりあえずコメントアウト)
+    # torch.save(model.state_dict(), f"{output_dir}/_m_{id_str}_{epoch + 1:03}.pth")
 
     # 学習の状況をCSVに保存
     with open(path_log, mode = "a") as f: f.write(f"{loss},{f1v}\n")
+
+torch.save(model.state_dict(), f"{output_dir}/_m_{id_str}_{cf.epochSize:03}.pth")
 print("done %.0fs" % (time.time() - s_tm))

@@ -65,7 +65,7 @@ for f in range(len(fileList)):
 
         x0, y0 = int(b[0]), int(b[1])
         p0, p1 = (x0, y0), (int(b[2]), int(b[3]))
-        print(prd_cls, prd_val, p0, p1)
+        print(image_path.stem, prd_cls, prd_val, p0, p1)
         
         text = f" {prd_cls}  {prd_val:.3f} " # クラスと確率
         (t_w, t_h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得

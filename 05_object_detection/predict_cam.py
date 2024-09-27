@@ -26,8 +26,10 @@ model.eval()
 
 data_transforms = T.Compose([T.ToTensor()])
 
-# フォントの設定
+# フォントと枠の設定
 font_scale = cv2.getFontScaleFromHeight(cv2.FONT_HERSHEY_DUPLEX, 11, 1)
+colors = [(255, 100, 0), (0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
+clr_num = len(colors)
 
 sw, sh = 640, 480
 ssize = (sw, sh)
@@ -62,8 +64,7 @@ while True:
             p0, p1 = (x0, y0), (int(b[2]), int(b[3]))
             print(prd_cls, prd_val, p0, p1)
             
-            if prd_cls == 1: box_col = (0, 255, 0)
-            else: box_col = (0, 0, 255)
+            box_col = colors[prd_cls % clr_num]
 
             text = f" {prd_cls}  {prd_val:.3f} " # クラスと確率
             (t_w, t_h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得

@@ -21,3 +21,6 @@ CNNで画像からの回帰をしてみる。
 
 * 第五回：[05_object_detection](https://github.com/fudiwara/Python/tree/main/05_object_detection)  
 深層学習で画像からの物体検出をしてみる。
+
+* 第六回：[06_semantic_segmentation](https://github.com/fudiwara/Python/tree/main/06_semantic_segmentation)  
+深層学習で画像の領域分割をしてみる。

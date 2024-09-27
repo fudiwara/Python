@@ -16,8 +16,10 @@ image_path = sys.argv[2] # 入力画像のパス
 file_name = pathlib.Path(sys.argv[2])
 np.set_printoptions(precision = 3, suppress = True) # 指数表現をやめて小数点以下の桁数を指定する
 
-# フォントの設定
+# フォントと枠の設定
 font_scale = cv2.getFontScaleFromHeight(cv2.FONT_HERSHEY_DUPLEX, 11, 1)
+colors = [(255, 100, 0), (0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
+clr_num = len(colors)
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")
@@ -25,9 +27,6 @@ if DEVICE == "cuda":  model.load_state_dict(torch.load(model_path))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.to(DEVICE)
 model.eval()
-
-colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
-clr_num = len(colors)
 
 data_transforms = T.Compose([T.ToTensor()])
 

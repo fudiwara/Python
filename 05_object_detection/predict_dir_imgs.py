@@ -19,8 +19,10 @@ output_dir = pathlib.Path(sys.argv[3]) # 画像を保存するフォルダ
 if(not output_dir.exists()): output_dir.mkdir() # ディレクトリ生成
 np.set_printoptions(precision=3, suppress=True) # 指数表現をやめて小数点以下の桁数を指定する
 
-# フォントの設定
+# フォントと枠の設定
 font_scale = cv2.getFontScaleFromHeight(cv2.FONT_HERSHEY_DUPLEX, 11, 1)
+colors = [(255, 100, 0), (0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
+clr_num = len(colors)
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")
@@ -30,8 +32,6 @@ model.to(DEVICE)
 model.eval()
 
 exts = [".jpg", ".png", ".jpeg", ".JPG", ".PNG", ".JPEG"] # 処理対象の拡張子
-colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
-clr_num = len(colors)
 data_transforms = T.Compose([T.ToTensor()])
 
 proc_time = []

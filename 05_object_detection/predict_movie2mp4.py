@@ -22,7 +22,7 @@ if(not output_path.exists()): output_path.mkdir()
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")
-if DEVICE == "cuda":  model.load_state_dict(torch.load(model_path))
+if DEVICE == "cuda": model.load_state_dict(torch.load(model_path))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.to(DEVICE)
 model.eval()
@@ -47,7 +47,7 @@ vw = cv2.VideoWriter(output_file_name, fmt, frame_rate, dsize)
 print(output_file_name)
 
 proc_time = []
-for i in range(frame_count):
+for f in range(frame_count):
     s_tm = time.time()
     ret, frame = vc.read()
     src_img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -74,8 +74,7 @@ for i in range(frame_count):
         p0, p1 = (x0, y0), (int(b[2]), int(b[3]))
         print(prd_cls, prd_val, p0, p1)
         
-        if prd_cls == 1: box_col = (0, 255, 0)
-        else: box_col = (0, 0, 255)
+        box_col = colors[prd_cls % clr_num]
 
         text = f" {prd_cls}  {prd_val:.3f} " # クラスと確率
         (t_w, t_h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得

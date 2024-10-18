@@ -50,6 +50,7 @@ proc_time = []
 for f in range(frame_count):
     s_tm = time.time()
     ret, frame = vc.read()
+    if not ret: continue
     src_img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     img = Image.fromarray(src_img) # OpenCV形式からPIL形式へ変換
     data = data_transforms(img).unsqueeze(0) # テンソルに変換してから1次元追加
@@ -78,11 +79,11 @@ for f in range(frame_count):
 
         text = f" {prd_cls}  {prd_val:.3f} " # クラスと確率
         (t_w, t_h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得
-        cv2.rectangle(src_roi, p0, p1, box_col, thickness = 2) # テキストの背景の矩形
-        cv2.rectangle(src_roi, (x0, y0 - t_h), (x0 + t_w, y0), box_col, thickness = -1) # 検出領域の矩形
-        cv2.putText(src_roi, text, p0, cv2.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.rectangle(frame, p0, p1, box_col, thickness = 2) # テキストの背景の矩形
+        cv2.rectangle(frame, (x0, y0 - t_h), (x0 + t_w, y0), box_col, thickness = -1) # 検出領域の矩形
+        cv2.putText(frame, text, p0, cv2.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv2.LINE_AA)
         
-    vw.write(dst_img)
+    vw.write(frame)
     proc_time.append((time.time() - s_tm))
 
 vc.release()

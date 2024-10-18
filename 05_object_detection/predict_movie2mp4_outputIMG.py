@@ -84,7 +84,7 @@ for f in range(frame_count):
         cv2.putText(frame, text, p0, cv2.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv2.LINE_AA)
     
     if flag_no_ext:
-        cv2.imwrite(f"f{f:06}.png", frame)
+        cv2.imwrite(str(output_path / f"f{f:06}.png"), frame)
     
     vw.write(frame)
     proc_time.append((time.time() - s_tm))

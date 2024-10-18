@@ -43,7 +43,7 @@ print(ssize, frame_count, frame_rate)
 
 fmt = cv2.VideoWriter_fourcc('m', 'p', '4', 'v') # ファイル形式
 output_file_name = str(output_path / input_file_name.stem) + "_dst.mp4"
-vw = cv2.VideoWriter(output_file_name, fmt, frame_rate, dsize)
+vw = cv2.VideoWriter(output_file_name, fmt, frame_rate, ssize)
 print(output_file_name)
 
 proc_time = []

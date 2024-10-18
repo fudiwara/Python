@@ -39,7 +39,7 @@ sh = int(vc.get(cv2.CAP_PROP_FRAME_HEIGHT))
 ssize = (sw, sh)
 frame_count = int(vc.get(cv2.CAP_PROP_FRAME_COUNT))
 frame_rate = int(vc.get(cv2.CAP_PROP_FPS))
-print(ssize, frame_count, frame_rate, crop_rect)
+print(ssize, frame_count, frame_rate)
 
 fmt = cv2.VideoWriter_fourcc('m', 'p', '4', 'v') # ファイル形式
 output_file_name = str(output_path / input_file_name.stem) + "_dst.mp4"

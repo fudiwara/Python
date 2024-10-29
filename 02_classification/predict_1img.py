@@ -13,7 +13,7 @@ image_path = sys.argv[2] # 推定する画像のパス
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval").to(DEVICE)
-if DEVICE == "cuda": model.load_state_dict(torch.load(model_path))
+if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = False))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 
@@ -28,7 +28,7 @@ data = data.unsqueeze(0) # テンソルに変換してから1次元追加
 data = data.to(DEVICE)
 outputs = model(data)
 _, preds = torch.max(outputs, 1) # 1次元目の中の最大値を得る(最大値と最大値のインデックス)
-pred_idx = preds.cpu().numpy().tolist() # tensorから数値へ
+pred_idx = preds[0].cpu().numpy().tolist() # tensorから数値へ
 
 # 結果の表示
 np.set_printoptions(precision = 3)

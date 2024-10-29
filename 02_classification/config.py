@@ -10,13 +10,13 @@ from torchvision import models
 cellSize = 200
 
 # クラス全体の数
-classesSize = 3
+classesSize = 10
 
 # 繰り返す回数
-epochSize = 3
+epochSize = 50
 
 # ミニバッチのサイズ
-batchSize = 50
+batchSize = 100
 
 # 学習時のサンプルを学習：検証データに分ける学習側の割合
 splitRateTrain = 0.8

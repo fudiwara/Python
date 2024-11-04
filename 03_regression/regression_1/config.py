@@ -44,7 +44,7 @@ data_transforms = T.Compose([
 
 class build_model(nn.Module):
     def __init__(self, sw_train_eval):
-        super().__init__():
+        super().__init__()
         if sw_train_eval == "train":
             self.model_pre = models.efficientnet_v2_s(weights = "DEFAULT")
         else:

@@ -13,7 +13,7 @@ image_path = sys.argv[2] # 推定する画像のパス
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval").to(DEVICE)
-if DEVICE == "cuda": model.load_state_dict(torch.load(model_path))
+if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = False))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])

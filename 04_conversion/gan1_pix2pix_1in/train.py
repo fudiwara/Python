@@ -101,8 +101,8 @@ for i in range(cf.epochSize):
     torchvision.utils.save_image(buf_save_imgs, f"{log_dir}/_e_{i + 1:03}.png", value_range=(-1.0, 1.0), normalize = True)
 
     # モデルの保存
-    # if 0 < i and i % 10 == 0:
-    #     torch.save(model_G.state_dict(), f"{log_dir}/_gen_{i:03}.pth")
+    if 0 < i and i % 10 == 0:
+        torch.save(model_G.state_dict(), f"{log_dir}/_gen_{i:03}.pth")
     #     torch.save(model_D.state_dict(), f"{log_dir}/_dis_{i:03}.pth") # こちらは基本的には使わない
 
 torch.save(model_G.state_dict(), f"{log_dir}/_gen_{cf.epochSize:03}.pth")

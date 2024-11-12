@@ -41,4 +41,4 @@ img_tmp = (tmp * 255).astype(np.uint8) # 0-1の範囲なので255倍して画像
 img_dst = cv2.cvtColor(img_tmp, cv2.COLOR_RGB2BGR)
 img_ssize_dst = cv2.resize(img_dst, (i_w, i_h), interpolation = cv2.INTER_LANCZOS4)
 
-cv2.imwrite(file_name.stem + "_cg.jpg", img_ssize_dst) 
+cv2.imwrite(file_name.stem + "_cg.png", img_ssize_dst) 

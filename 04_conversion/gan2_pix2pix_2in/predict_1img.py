@@ -27,6 +27,7 @@ model.eval()
 
 img = Image.open(image_path).convert("RGB") # カラー指定で開く
 i_w, i_h = img.size
+img = img.resize((cf.cellSize, cf.cellSize))
 data_transforms = T.Compose([T.Resize(cf.cellSize), T.ToTensor()])
 data = data_transforms(img)
 data = data.unsqueeze(0) # テンソルに変換してから1次元追加

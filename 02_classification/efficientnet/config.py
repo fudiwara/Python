@@ -24,7 +24,7 @@ splitRateTrain = 0.8
 # データ変換
 data_transforms = T.Compose([
     T.Resize(int(cellSize * 1.2)),
-    T.RandomRotation(degrees = 15),
+    T.RandomRotation(degrees = 5),
     T.RandomApply([T.GaussianBlur(5, sigma = (0.1, 5.0))], p = 0.5),
     T.ColorJitter(brightness = 0, contrast = 0, saturation = 0, hue = [-0.2, 0.2]),
     T.RandomHorizontalFlip(0.5),

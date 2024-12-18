@@ -15,7 +15,6 @@ print(DEVICE)
 model_path = sys.argv[1] # モデルのパス
 cam_num = int(sys.argv[2]) # カメラのID
 cap = cv2.VideoCapture(cam_num)
-box_col = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0), (255, 0, 255), (0, 255, 255), (255, 127, 0), (255, 0, 127), (0, 255, 127), (127, 255, 0), (127, 0, 255), (0, 127, 255), (192, 127, 0), (192, 0, 127), (0, 192, 127), (127, 192, 0), (127, 0, 192), (0, 127, 192)]
 
 # フォントの設定
 font_scale = cv2.getFontScaleFromHeight(cv2.FONT_HERSHEY_DUPLEX, 11, 1)

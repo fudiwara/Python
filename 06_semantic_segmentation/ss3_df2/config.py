@@ -19,7 +19,7 @@ thDetection = 0.6
 splitRateTrain = 0.97
 
 cate_name = ["background", "short sleeved shirt", "long sleeved shirt", "short sleeved outwear", "long sleeved outwear", "vest", "sling", "shorts", "trousers", "skirt", "short sleeved dress", "long sleeved dress", "vest dress", "sling dress"]
-box_col = [(0, 0, 0), (192, 127, 0), (192, 0, 127), (0, 192, 127), (127, 192, 0), (127, 0, 192), (0, 127, 192), (255, 127, 0), (255, 0, 127), (0, 255, 127), (127, 255, 0), (127, 0, 255), (0, 127, 255), (0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
+box_col = [(0, 0, 0), (0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0), (255, 0, 255), (0, 255, 255), (192, 127, 0), (192, 0, 127), (0, 192, 127), (127, 192, 0), (127, 0, 192), (0, 127, 192), (127, 0, 0), (0, 127, 0), (0, 0, 127)]
 
 def build_model(sw_train_eval):
     if sw_train_eval == "train":

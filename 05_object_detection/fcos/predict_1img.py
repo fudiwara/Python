@@ -46,7 +46,7 @@ labels = outputs[0]["labels"].detach().cpu().numpy()
 
 img = cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR)
 for i in range(len(scores)):
-    b = bboxs[i]
+    b = bboxs[i] # 入力画像のスケールの座標
     # print(b)
     prd_val = scores[i]
     if prd_val < cf.thDetection: continue # 閾値以下は飛ばす

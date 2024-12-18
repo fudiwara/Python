@@ -15,7 +15,7 @@ print(DEVICE)
 model_path = sys.argv[1] # モデルのパス
 input_file_name = pathlib.Path(sys.argv[2]) # 入力のmp4ファイル
 vc = cv2.VideoCapture(sys.argv[2])
-interval_min = int(sys.argv[3])
+interval_min = int(sys.argv[3]) # フレームを確認する間隔(分)
 
 # output_path = pathlib.Path(sys.argv[4]) # 出力先ディレクトリ
 # if(not output_path.exists()): output_path.mkdir()
@@ -44,20 +44,15 @@ for f in range(0, frame_count, interval_frame):
 
     src_img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     img = Image.fromarray(src_img) # OpenCV形式からPIL形式へ変換
-    data = data_transforms(img).unsqueeze(0) # テンソルに変換してから1次元追加
-    data = data
-
-    data = data.to(DEVICE)
+    data = data_transforms(img).unsqueeze(0).to(DEVICE) # テンソルに変換してから1次元追加
     outputs = model(data) # 推定処理
     # print(outputs)
     bboxs = outputs[0]["boxes"].detach().cpu().numpy()
     scores = outputs[0]["scores"].detach().cpu().numpy()
     labels = outputs[0]["labels"].detach().cpu().numpy()
-    # print(bboxs, scores, labels)
 
     for i in range(len(scores)):
         b = bboxs[i]
-        # print(b)
         prd_val = scores[i]
         if prd_val < cf.thDetection: continue # 閾値以下が出現した段階で終了
         prd_cls = labels[i]
@@ -77,6 +72,6 @@ for f in range(0, frame_count, interval_frame):
 
 vc.release()
 
-with open(f"{input_file_name.name}_log.txt", mode = "w") as f:
+with open(f"{input_file_name.name}_log.csv", mode = "w") as f: # 各クラスの検出数を出力
     for i in range(cf.numClasses):
         print(f"{cf.cate_name[i]},{cls_log[i]}", file = f)

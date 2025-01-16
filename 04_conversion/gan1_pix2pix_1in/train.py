@@ -38,7 +38,7 @@ mae_loss = nn.L1Loss()
 dataset = ld.load_datasets(dataset_path)
 itr_size = cf.dataset_size // cf.batchSize
 s_tm = time.time()
-with open(path_log, mode = "w") as f: f.write("gl_mean,gl_bce,gl_l1,dl\n") # 損失推移の記録用
+with open(path_log, mode = "w") as f: print("gl_mean,gl_bce,gl_l1,dl", file = f) # 損失推移の記録用
 for i in range(cf.epochSize):
     log_loss_G_sum, log_loss_G_bce, log_loss_G_mae, log_loss_D = [], [], [], []
     n_tm = time.time()
@@ -94,7 +94,7 @@ for i in range(cf.epochSize):
     print(f"\r {i + 1:03} / {cf.epochSize:03} [ {n + 1:04} / {itr_size:04} ] GL bce: {gl_bce:.04f} l1: {gl_l1:.04f} DL: {dl:.04f} {time.time() - n_tm:.01f}s")
 
     # 学習の状況をCSVに保存
-    with open(path_log, mode = "a") as f: f.write(f"{gl_mean},{gl_bce},{gl_l1},{dl}\n")
+    with open(path_log, mode = "a") as f: print(f"{gl_mean},{gl_bce},{gl_l1},{dl}", file = f)
 
     # Gでの生成画像例とソース画像を連結してから保存
     buf_save_imgs = torch.cat([fake_target_tensor[:min(batch_len, 32)], real_target[:min(batch_len, 32)]], dim = 0)

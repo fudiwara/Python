@@ -39,7 +39,7 @@ params = [p for p in model.parameters() if p.requires_grad]
 # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1) # 3エポックごとに学習率が1/10
 optimizer = torch.optim.Adam(model.parameters(), lr=0.00002, betas=(0.5, 0.999))
 
-with open(path_log, mode = "w") as f: f.write("loss,f1\n")
+with open(path_log, mode = "w") as f: print(f"loss,f1v", file = f)
 s_tm = time.time()
 for epoch in range(cf.epochSize):
     loss = train_one_epoch(model, optimizer, train_loader, DEVICE, epoch, print_freq=1) # 学習
@@ -48,5 +48,5 @@ for epoch in range(cf.epochSize):
     torch.save(model.state_dict(), f"{output_dir}/_m_{id_str}_{epoch + 1:03}.pth") # モデルの保存
 
     # 学習の状況をCSVに保存
-    with open(path_log, mode = "a") as f: f.write(f"{loss},{f1v}\n")
+    with open(path_log, mode = "a") as f: print(f"{loss},{f1v}", file = f)
 print("done %.0fs" % (time.time() - s_tm))

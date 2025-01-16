@@ -79,7 +79,7 @@ def Train_Eval(model,criterion,optimizer,scheduler,data_loader,device,epoch,max_
     return total_loss/(n+1), total_acc/counter
 
 best_loss = None
-with open(path_log, mode = "w") as f: f.write("")
+with open(path_log, mode = "w") as f: print("train_loss,val_loss,train_acc,val_acc", file = f)
 s_tm = time.time()
 
 for epoch in range(cf.epochSize):
@@ -94,7 +94,7 @@ for epoch in range(cf.epochSize):
     # torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{epoch+1:03}.pth")
 
     # 学習の状況をCSVに保存
-    with open(path_log, mode = "a") as f: f.write(f"{train_loss},{val_loss},{train_acc},{val_acc}\n")
+    with open(path_log, mode = "a") as f: print(f"{train_loss},{val_loss},{train_acc},{val_acc}", file = f)
 
 torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{cf.epochSize:03}.pth") # モデルの保存
 print(f"done {time.time() - s_tm:.0f}s")

@@ -22,7 +22,7 @@ box_col = [(0, 0, 0), (192, 127, 0), (192, 0, 127), (0, 192, 127), (127, 192, 0)
 
 def build_model(sw_train_eval):
     if sw_train_eval == "train":
-        model = torchvision.models.detection.maskrcnn_resnet50_fpn(weights="DEFAULT")
+        model = torchvision.models.detection.maskrcnn_resnet50_fpn(weights = "DEFAULT")
     else:
         model = torchvision.models.detection.maskrcnn_resnet50_fpn()
 

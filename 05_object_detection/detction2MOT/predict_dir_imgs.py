@@ -26,8 +26,8 @@ clr_num = len(colors)
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")
-if DEVICE == "cuda": model.load_state_dict(torch.load(model_path))
-else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
+if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = False))
+else: model.load_state_dict(torch.load(model_path, torch.device("cpu"), weights_only = False))
 model.to(DEVICE)
 model.eval()
 

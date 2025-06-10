@@ -24,7 +24,7 @@ def get_transform(train):
     return T.Compose(transforms)
 
 class loadImagesCocoJson(Dataset):
-    def __init__(self, img_dir_path, annot_json_path, transforms): # 画像とアノテーションPNGへのパス
+    def __init__(self, img_dir_path, annot_json_path, transforms): # 画像とアノテーションjsonへのパス
         coco = COCO(annot_json_path)
         img_idxs, img_paths = [], []
         with open(annot_json_path) as f:
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=False, num_workers=4, collate_fn=collate_fn)
 
-    if(not img_dir.exists()): img_dir.mkdir() # ディレクトリ生成
+    if(not img_dir.exists()): img_dir.mkdir() # 出力用のディレクトリ生成
 
     print("don pre-pro")
     for n, (imgs, lbls) in enumerate(train_loader):

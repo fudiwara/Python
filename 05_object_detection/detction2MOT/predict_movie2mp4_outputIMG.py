@@ -13,6 +13,7 @@ import config as cf
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(DEVICE)
 model_path = sys.argv[1] # モデルのパス
+
 input_file_name = pathlib.Path(sys.argv[2]) # 入力のmp4ファイル
 vc = cv2.VideoCapture(sys.argv[2])
 
@@ -21,8 +22,8 @@ if(not output_path.exists()): output_path.mkdir()
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")
-if DEVICE == "cuda": model.load_state_dict(torch.load(model_path))
-else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
+if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = False))
+else: model.load_state_dict(torch.load(model_path, torch.device("cpu"), weights_only = False))
 model.to(DEVICE)
 model.eval()
 
@@ -81,7 +82,10 @@ for f in range(frame_count):
         cv2.rectangle(frame, p0, p1, box_col, thickness = 2) # テキストの背景の矩形
         cv2.rectangle(frame, (x0, y0 - t_h), (x0 + t_w, y0), box_col, thickness = -1) # 検出領域の矩形
         cv2.putText(frame, text, p0, cv2.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv2.LINE_AA)
-        
+    
+    if flag_no_ext:
+        cv2.imwrite(str(output_path / f"f{f:06}.png"), frame)
+    
     vw.write(frame)
     proc_time.append((time.time() - s_tm))
 

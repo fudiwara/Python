@@ -69,4 +69,3 @@ if __name__ == "__main__":
     img.format = "png"
     img.render("_model_graph") # グラフを画像に保存
     os.remove("_model_graph") # 拡張子無しのファイルもできるので個別に削除
-

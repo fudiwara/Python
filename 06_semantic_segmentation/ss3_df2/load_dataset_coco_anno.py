@@ -100,7 +100,7 @@ if __name__ == "__main__":
             for i in range(len(masks)):
                 mw, mh = masks[i].shape
                 mask = masks[i]
-                cid = cat_id[i]
+                cid = cat_id[i] % len(cf.box_col)
                 rm = mask * cf.box_col[cid][0]
                 gm = mask * cf.box_col[cid][1]
                 bm = mask * cf.box_col[cid][2]

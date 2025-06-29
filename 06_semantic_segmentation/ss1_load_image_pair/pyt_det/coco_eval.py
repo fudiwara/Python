@@ -14,8 +14,12 @@ class CocoEvaluator:
     def __init__(self, coco_gt, iou_types):
         if not isinstance(iou_types, (list, tuple)):
             raise TypeError(f"This constructor expects iou_types of type list or tuple, instead  got {type(iou_types)}")
-        coco_gt = copy.deepcopy(coco_gt)
+        # coco_gt = copy.deepcopy(coco_gt)
         self.coco_gt = coco_gt
+
+        modified_dataset = copy.deepcopy(self.coco_gt.dataset) # infoを追加
+        modified_dataset['info'] = [{'description': 'COCO Dataset (Generated)', 'version': '1.0', 'year': 2025, 'contributor': 'Custom', 'date_created': '2025/01/01'}]
+        self.coco_gt.dataset = modified_dataset # 修正した辞書を self.coco_gt の dataset プロパティに代入
 
         self.iou_types = iou_types
         self.coco_eval = {}

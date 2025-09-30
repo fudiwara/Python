@@ -20,8 +20,7 @@ model.eval()
 # 画像の読み込み・変換
 img = Image.open(image_path).convert("RGB") # カラー指定で開く
 data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
-data = data_transforms(img)
-data = data.unsqueeze(0) # テンソルに変換してから1次元追加
+data = data_transforms(img).unsqueeze(0) # テンソルに変換してから1次元追加
 # print(data.shape)
 
 # 推定処理

@@ -4,10 +4,10 @@
 
 import sys
 sys.dont_write_bytecode = True
-import cv2
+import cv2 as cv
 import mediapipe as mp
 
-cap = cv2.VideoCapture(int(sys.argv[1])) # キャプチャ開始(複数カメラはIDを追加)
+cap = cv.VideoCapture(int(sys.argv[1])) # キャプチャ開始(複数カメラはIDを追加)
 
 mp_hands = mp.solutions.hands # handsの初期化
 # 最大検出数、検出信頼度、追跡信頼度 (変数はこのままでいいかな？)
@@ -23,7 +23,7 @@ while True:
     if not ret: continue # キャプチャできていなければ再ループ
     cam_height, cam_width, _ = frame.shape # フレームサイズ取得(一回やればほんとうはいいのだけど)
 
-    results = hands.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)) # mediapipeに処理を渡す
+    results = hands.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB)) # mediapipeに処理を渡す
     if results.multi_hand_landmarks:
 
         # 検出した手の数分繰り返し
@@ -32,10 +32,10 @@ while True:
             for n in range(len(posHandsIds)): # 上記で設定したパーツ分ループする
                 x = int(hand_landmarks.landmark[posHandsIds[n]].x * cam_width)
                 y = int(hand_landmarks.landmark[posHandsIds[n]].y * cam_height)
-                cv2.circle(frame, (x, y), 15, handsCol[h_id], thickness = 2)
+                cv.circle(frame, (x, y), 15, handsCol[h_id], thickness = 2)
                 # print(x, y) # デバッグ用
 
-    cv2.imshow("image", frame) # 円描画した結果の表示
+    cv.imshow("image", frame) # 円描画した結果の表示
 
-    k = cv2.waitKey(1)
+    k = cv.waitKey(1)
     if k == 27: break # escキーでプログラム終了

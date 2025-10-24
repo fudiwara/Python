@@ -3,7 +3,7 @@ import sys
 sys.dont_write_bytecode = True
 import numpy as np
 from PIL import Image
-import cv2
+import cv2 as cv
 import pathlib
 
 import torch
@@ -27,7 +27,7 @@ else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 
 img = Image.open(image_path).convert("RGB") # カラー指定で開く
-img_src = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR) # 後の処理用にnpメモリも用意する
+img_src = cv.cvtColor(np.array(img), cv.COLOR_RGB2BGR) # 後の処理用にnpメモリも用意する
 i_w, i_h = img.size
 data_transforms = T.Compose([T.Resize(cf.cellSize), T.ToTensor()])
 data = data_transforms(img)
@@ -40,8 +40,8 @@ output = model(data) # 推定処理
 tmp = output[0,:,:,:].permute(1, 2, 0) # 画像出力用に次元の入れ替え
 tmp = tmp.to("cpu").detach().numpy() # np配列に変換
 img_tmp = (tmp * 255).astype(np.uint8) # 0-1の範囲なので255倍して画像用データへ
-img_dst = cv2.cvtColor(img_tmp, cv2.COLOR_RGB2BGR)
-img_ssize_dst = cv2.resize(img_dst, (i_w, i_h), interpolation = cv2.INTER_LANCZOS4)
+img_dst = cv.cvtColor(img_tmp, cv.COLOR_RGB2BGR)
+img_ssize_dst = cv.resize(img_dst, (i_w, i_h), interpolation = cv.INTER_LANCZOS4)
 
 output_filename = file_name.stem + "_cg.jpg"
-cv2.imwrite(str(output_path / output_filename), img_ssize_dst) 
+cv.imwrite(str(output_path / output_filename), img_ssize_dst) 

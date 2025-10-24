@@ -2,7 +2,7 @@ import sys, os
 sys.dont_write_bytecode = True
 import pathlib
 
-import cv2
+import cv2 as cv
 import numpy as np
 from PIL import Image
 
@@ -19,7 +19,7 @@ file_name = pathlib.Path(image_path)
 np.set_printoptions(precision = 3, suppress = True) # 指数表現をやめて小数点以下の桁数を指定する
 
 # フォントの設定
-font_scale = cv2.getFontScaleFromHeight(cv2.FONT_HERSHEY_DUPLEX, 11, 1)
+font_scale = cv.getFontScaleFromHeight(cv.FONT_HERSHEY_DUPLEX, 11, 1)
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")
@@ -60,15 +60,15 @@ for i in range(len(scores)):
     print(prd_cls, prd_val, p0, p1)
 
     text = f" {prd_cls}  {prd_val:.3f} " # クラスと確率
-    (t_w, t_h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得
-    cv2.rectangle(img, p0, p1, cf.box_col[prd_cls], thickness = 2) # 検出領域の矩形
-    cv2.rectangle(img, (x0, y0 - t_h), (x0 + t_w, y0), cf.box_col[prd_cls], thickness = -1) # テキストの背景の矩形
-    cv2.putText(img, text, p0, cv2.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv2.LINE_AA)
+    (t_w, t_h), baseline = cv.getTextSize(text, cv.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得
+    cv.rectangle(img, p0, p1, cf.box_col[prd_cls], thickness = 2) # 検出領域の矩形
+    cv.rectangle(img, (x0, y0 - t_h), (x0 + t_w, y0), cf.box_col[prd_cls], thickness = -1) # テキストの背景の矩形
+    cv.putText(img, text, p0, cv.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv.LINE_AA)
 
     # print(masks[i])
     # msk_img = masks[i][0]
     # msk_img = (msk_img*255).astype(np.uint8)
     # outputFIlename = f"{file_name.stem}_{i}.png"
-    # cv2.imwrite(outputFIlename, msk_img) 
+    # cv.imwrite(outputFIlename, msk_img) 
 
-cv2.imwrite(f"{file_name.stem}_det.png", img)
+cv.imwrite(f"{file_name.stem}_det.png", img)

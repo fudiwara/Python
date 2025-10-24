@@ -3,10 +3,10 @@
 
 import sys
 sys.dont_write_bytecode = True
-import cv2
+import cv2 as cv
 import mediapipe as mp
 
-cap = cv2.VideoCapture(int(sys.argv[1])) # キャプチャ開始(複数カメラはIDを追加)
+cap = cv.VideoCapture(int(sys.argv[1])) # キャプチャ開始(複数カメラはIDを追加)
 
 mp_face_mesh = mp.solutions.face_mesh # face trackの初期化
 face_mesh = mp_face_mesh.FaceMesh(max_num_faces = 1, min_detection_confidence = 0.5, min_tracking_confidence = 0.5)
@@ -22,7 +22,7 @@ while True:
     if not ret: continue # キャプチャできていなければ再ループ
     cam_height, cam_width, _ = frame.shape # フレームサイズ取得(一回やればほんとうはいいのだけど)
 
-    results = face_mesh.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)) # mediapipeに処理を渡す
+    results = face_mesh.process(cv.cvtColor(frame, cv.COLOR_BGR2RGB)) # mediapipeに処理を渡す
     if results.multi_face_landmarks:
         for face in results.multi_face_landmarks:
             for i in range(468):
@@ -30,9 +30,9 @@ while True:
                 y = int(face.landmark[i].y * cam_height)
                 if i in posFacesParts: c = 0
                 else: c = 1
-                cv2.circle(frame, (x, y), 2, fCol[c], thickness = 1)
+                cv.circle(frame, (x, y), 2, fCol[c], thickness = 1)
 
-    cv2.imshow("image", frame) # 円描画した結果の表示
+    cv.imshow("image", frame) # 円描画した結果の表示
 
-    k = cv2.waitKey(1)
+    k = cv.waitKey(1)
     if k == 27: break # escキーでプログラム終了

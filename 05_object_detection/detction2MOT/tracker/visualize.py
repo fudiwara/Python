@@ -1,4 +1,4 @@
-import cv2
+import cv2 as cv
 import numpy as np
 
 
@@ -21,8 +21,8 @@ def plot_tracking(image, tlwhs, obj_ids, scores=None, frame_id=0, ids2=None):
     line_thickness = 3
 
     radius = max(5, int(im_w/140.))
-    cv2.putText(im, 'frame: %d num: %d' % (frame_id, len(tlwhs)),
-                (0, int(15 * text_scale)), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), thickness=2)
+    cv.putText(im, 'frame: %d num: %d' % (frame_id, len(tlwhs)),
+                (0, int(15 * text_scale)), cv.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), thickness=2)
 
     for i, tlwh in enumerate(tlwhs):
         x1, y1, w, h = tlwh
@@ -32,8 +32,8 @@ def plot_tracking(image, tlwhs, obj_ids, scores=None, frame_id=0, ids2=None):
         if ids2 is not None:
             id_text = id_text + ', {}'.format(int(ids2[i]))
         color = get_color(abs(obj_id))
-        cv2.rectangle(im, intbox[0:2], intbox[2:4], color=color, thickness=line_thickness)
-        cv2.putText(im, id_text, (intbox[0], intbox[1]), cv2.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
+        cv.rectangle(im, intbox[0:2], intbox[2:4], color=color, thickness=line_thickness)
+        cv.putText(im, id_text, (intbox[0], intbox[1]), cv.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
                     thickness=text_thickness)
     return im
 

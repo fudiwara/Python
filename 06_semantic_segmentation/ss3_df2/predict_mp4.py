@@ -1,7 +1,7 @@
 import sys, time, pathlib
 sys.dont_write_bytecode = True
 
-import cv2
+import cv2 as cv
 import numpy as np
 from PIL import Image
 
@@ -14,10 +14,10 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(DEVICE)
 model_path = sys.argv[1] # モデルのパス
 input_file_name = pathlib.Path(sys.argv[2]) # 入力のmp4ファイル
-vc = cv2.VideoCapture(sys.argv[2])
+vc = cv.VideoCapture(sys.argv[2])
 
 # フォントの設定
-font_scale = cv2.getFontScaleFromHeight(cv2.FONT_HERSHEY_DUPLEX, 11, 1)
+font_scale = cv.getFontScaleFromHeight(cv.FONT_HERSHEY_DUPLEX, 11, 1)
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")
@@ -28,16 +28,16 @@ model.eval()
 
 data_transforms = torchvision.transforms.Compose([torchvision.transforms.ToTensor()])
 
-sw = int(vc.get(cv2.CAP_PROP_FRAME_WIDTH))
-sh = int(vc.get(cv2.CAP_PROP_FRAME_HEIGHT))
+sw = int(vc.get(cv.CAP_PROP_FRAME_WIDTH))
+sh = int(vc.get(cv.CAP_PROP_FRAME_HEIGHT))
 ssize = (sw, sh)
-frame_count = int(vc.get(cv2.CAP_PROP_FRAME_COUNT))
-frame_rate = int(vc.get(cv2.CAP_PROP_FPS))
+frame_count = int(vc.get(cv.CAP_PROP_FRAME_COUNT))
+frame_rate = int(vc.get(cv.CAP_PROP_FPS))
 print(ssize, frame_count, frame_rate)
 
-fmt = cv2.VideoWriter_fourcc(*"mp4v") # ファイル形式
+fmt = cv.VideoWriter_fourcc(*"mp4v") # ファイル形式
 output_file_name = input_file_name.stem + "_dst.mp4"
-vw = cv2.VideoWriter(output_file_name, fmt, frame_rate, ssize)
+vw = cv.VideoWriter(output_file_name, fmt, frame_rate, ssize)
 print(output_file_name)
 
 proc_time = []
@@ -46,7 +46,7 @@ for f in range(frame_count):
     ret, frame = vc.read()
     if not ret: continue
 
-    src_img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    src_img = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
     img = Image.fromarray(src_img) # OpenCV形式からPIL形式へ変換
     data = data_transforms(img)
     data = data.unsqueeze(0) # テンソルに変換してから1次元追加
@@ -71,10 +71,10 @@ for f in range(frame_count):
         print(prd_cls, prd_val, p0, p1)
 
         text = f" {prd_cls}  {prd_val:.3f} " # クラスと確率
-        (t_w, t_h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得
-        cv2.rectangle(frame, p0, p1, cf.box_col[prd_cls], thickness = 2) # 検出領域の矩形
-        cv2.rectangle(frame, (x0, y0 - t_h), (x0 + t_w, y0), cf.box_col[prd_cls], thickness = -1) # テキストの背景の矩形
-        cv2.putText(frame, text, p0, cv2.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv2.LINE_AA)
+        (t_w, t_h), baseline = cv.getTextSize(text, cv.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得
+        cv.rectangle(frame, p0, p1, cf.box_col[prd_cls], thickness = 2) # 検出領域の矩形
+        cv.rectangle(frame, (x0, y0 - t_h), (x0 + t_w, y0), cf.box_col[prd_cls], thickness = -1) # テキストの背景の矩形
+        cv.putText(frame, text, p0, cv.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv.LINE_AA)
     
     vw.write(frame)
     proc_time.append((time.time() - s_tm))

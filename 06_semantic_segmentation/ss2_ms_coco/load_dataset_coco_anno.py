@@ -67,7 +67,7 @@ class loadImagesCocoJson(Dataset):
         return img, targets
 
 if __name__ == "__main__":
-    import cv2
+    import cv2 as cv
 
     img_dir_path = pathlib.Path(sys.argv[1])
     annot_json_path = sys.argv[2]
@@ -90,7 +90,7 @@ if __name__ == "__main__":
             tmp = torch.clamp(tmp, min=0, max=1)
             tmp = tmp.to("cpu").detach().numpy() # np配列に変換
             img_tmp = (tmp * 255).astype(np.uint8) # 0-1の範囲なので255倍して画像用データへ
-            img_src = cv2.cvtColor(img_tmp, cv2.COLOR_RGB2BGR)
+            img_src = cv.cvtColor(img_tmp, cv.COLOR_RGB2BGR)
 
             _, iw, ih = imgs[j].shape
             masks = lbls[j]["masks"]
@@ -106,16 +106,16 @@ if __name__ == "__main__":
 
                 b = bboxs[i]
                 p0, p1 = (int(b[0]), int(b[1])), (int(b[2]), int(b[3]))
-                col_m = cv2.merge([bm.to("cpu").detach().numpy(), gm.to("cpu").detach().numpy(), rm.to("cpu").detach().numpy()])
-                img_src = cv2.addWeighted(img_src, 1, col_m, 1, 0)
-                cv2.rectangle(img_src, p0, p1, cf.box_col[cid], thickness = 2)
+                col_m = cv.merge([bm.to("cpu").detach().numpy(), gm.to("cpu").detach().numpy(), rm.to("cpu").detach().numpy()])
+                img_src = cv.addWeighted(img_src, 1, col_m, 1, 0)
+                cv.rectangle(img_src, p0, p1, cf.box_col[cid], thickness = 2)
 
                 # print(mw, mh)
                 # if iw != mw or ih != mh:
                 #     print(n, lbls[0]["image_id"])
 
             output_filepath = img_dir / f"{img_id:07}.jpg"
-            cv2.imwrite(str(output_filepath), img_src)
+            cv.imwrite(str(output_filepath), img_src)
 
         # if n == 10: break
 

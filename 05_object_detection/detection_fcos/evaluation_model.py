@@ -2,7 +2,7 @@ import sys, os, time
 sys.dont_write_bytecode = True
 import torch
 import torchvision.transforms as T
-import cv2
+import cv2 as cv
 import numpy as np
 from PIL import Image
 import pathlib
@@ -20,7 +20,7 @@ if(not output_dir.exists()): output_dir.mkdir() # ディレクトリ生成
 np.set_printoptions(precision=3, suppress=True) # 指数表現をやめて小数点以下の桁数を指定する
 
 # フォントと枠の設定
-font_scale = cv2.getFontScaleFromHeight(cv2.FONT_HERSHEY_DUPLEX, 11, 1)
+font_scale = cv.getFontScaleFromHeight(cv.FONT_HERSHEY_DUPLEX, 11, 1)
 colors = [(255, 100, 0), (0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
 clr_num = len(colors)
 
@@ -113,7 +113,7 @@ for idx in range(len(image_filenames)):
     labels = outputs[0]["labels"].detach().cpu().numpy()
     # print(bboxs, scores, labels)
 
-    img = cv2.cvtColor(np.array(img, dtype=np.uint8), cv2.COLOR_RGB2BGR)
+    img = cv.cvtColor(np.array(img, dtype=np.uint8), cv.COLOR_RGB2BGR)
     det_objs = 0
     for i in range(len(scores)):
         b = bboxs[i]
@@ -129,10 +129,10 @@ for idx in range(len(image_filenames)):
         box_col = colors[prd_cls % clr_num]
 
         text = f" {prd_cls}  {prd_val:.3f} " # クラスと確率
-        (t_w, t_h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得
-        cv2.rectangle(img, p0, p1, box_col, thickness = 2) # 検出領域の矩形
-        cv2.rectangle(img, (x0, y0 - t_h), (x0 + t_w, y0), box_col, thickness = -1) # テキストの背景の矩形
-        cv2.putText(img, text, p0, cv2.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv2.LINE_AA)
+        (t_w, t_h), baseline = cv.getTextSize(text, cv.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得
+        cv.rectangle(img, p0, p1, box_col, thickness = 2) # 検出領域の矩形
+        cv.rectangle(img, (x0, y0 - t_h), (x0 + t_w, y0), box_col, thickness = -1) # テキストの背景の矩形
+        cv.putText(img, text, p0, cv.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv.LINE_AA)
 
         val_iou = rect_comp_rectinfo(b[0], b[1], b[2], b[3], prd_cls, rect_info[idx])
         # print(val_iou)
@@ -158,7 +158,7 @@ for idx in range(len(image_filenames)):
 
     output_filename = f"{file_name.stem}_det.png"
     output_img_path = output_dir / output_filename
-    cv2.imwrite(output_img_path, img)
+    cv.imwrite(output_img_path, img)
     proc_time.append((time.time() - s_tm))
 
 det_rate = np.sum(det_just_num) / len(image_filenames)

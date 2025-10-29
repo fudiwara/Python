@@ -29,7 +29,8 @@ for i in range(len(fileList)):
 
     # 推定処理
     data = data.to(DEVICE)
-    outputs = model(data)
+    with torch.no_grad(): # 推定のために勾配計算の無効化モードで
+        outputs = model(data)
 
     # 結果には正規化用の係数を乗算する
     pred_val = outputs[0].item() * cf.val_rate

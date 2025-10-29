@@ -25,8 +25,7 @@ clr_num = len(colors)
 model = cf.build_model("eval")
 if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = False))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu"), weights_only = False))
-model.to(DEVICE)
-model.eval()
+model.to(DEVICE).eval()
 
 data_transforms = T.Compose([T.ToTensor()])
 
@@ -37,7 +36,8 @@ data = data_transforms(img)
 data = data.unsqueeze(0) # テンソルに変換してから1次元追加
 
 data = data.to(DEVICE)
-outputs = model(data) # 推定処理
+with torch.no_grad(): # 推定のために勾配計算の無効化モードで
+    outputs = model(data) # 推定処理
 # print(outputs)
 bboxs = outputs[0]["boxes"].detach().cpu().numpy()
 scores = outputs[0]["scores"].detach().cpu().numpy()

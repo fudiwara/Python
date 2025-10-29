@@ -35,7 +35,8 @@ label_list, pred_list = [], []
 for i, (data, label) in enumerate(test_loader):
     data = data.to(DEVICE)
     label = label.numpy().tolist()
-    outputs = model(data)
+    with torch.no_grad(): # 推定のために勾配計算の無効化モードで
+        outputs = model(data)
     pred = torch.argmax(outputs, axis = 1).cpu().numpy().tolist()
     label_list += label
     pred_list += pred

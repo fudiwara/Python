@@ -27,7 +27,8 @@ label_list, pred_list = [], []
 for i, (data, label) in enumerate(test_loader):
     data = data.to(DEVICE)
     label = label.numpy().tolist()
-    outputs = model(data)
+    with torch.no_grad(): # 推定のために勾配計算の無効化モードで
+        outputs = model(data)
     
     out_view = outputs.view(-1, outputs.shape[0])
     out_view = out_view.squeeze()

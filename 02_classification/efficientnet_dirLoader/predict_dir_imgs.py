@@ -31,7 +31,8 @@ for i in range(len(img_paths)):
 
     # 推定処理
     data = data.to(DEVICE)
-    outputs = model(data)
+    with torch.no_grad(): # 推定のために勾配計算の無効化モードで
+        outputs = model(data)
     _, preds = torch.max(outputs, 1) # 1次元目の中の最大値を得る(最大値と最大値のインデックス)
     pred_idx = preds.cpu().numpy().tolist() # tensorから数値へ
     

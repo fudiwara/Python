@@ -16,6 +16,7 @@ model = cf.build_model("eval").to(DEVICE)
 if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = False))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
+
 data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
 
 IMG_EXTS = [".jpg", ".jpeg", ".png", ".bmp", ".JPG", ".JPEG", ".PNG", ".BMP"] # 処理対象の拡張子
@@ -29,7 +30,9 @@ for i in range(len(fileList)):
 
     # 推定処理
     data = data.to(DEVICE)
-    outputs = model(data)
+
+    with torch.no_grad(): # 推定のために勾配計算の無効化モードで
+        outputs = model(data)
     _, preds = torch.max(outputs, 1) # 1次元目の中の最大値を得る(最大値と最大値のインデックス)
     pred_idx = preds.cpu().numpy().tolist() # tensorから数値へ
     

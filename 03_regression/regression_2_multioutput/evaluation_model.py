@@ -27,7 +27,8 @@ test_loader = DataLoader(test_data, batch_size = bs, num_workers = os.cpu_count(
 label_list_0, pred_list_0, label_list_1, pred_list_1 = [], [], [], []
 for i, (data, lbls_0, lbls_1) in enumerate(test_loader):
     data = data.to(DEVICE)
-    pred = model(data) # 2 x B の配列
+    with torch.no_grad(): # 推定のために勾配計算の無効化モードで
+        pred = model(data) # 2 x B の配列
     lbls_0 = lbls_0.to("cpu").detach().numpy().tolist() # B x 1 の配列
     lbls_1 = lbls_1.to("cpu").detach().numpy().tolist()
 

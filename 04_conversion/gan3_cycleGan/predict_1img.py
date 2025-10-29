@@ -29,13 +29,13 @@ img_src = cv.cvtColor(np.array(img), cv.COLOR_RGB2BGR) # 後の処理用にnpメ
 i_w, i_h = img.size
 img = img.resize((cf.cellSize, cf.cellSize))
 data_transforms = T.Compose([T.Resize(cf.cellSize), T.ToTensor()])
-data = data_transforms(img)
-data = data.unsqueeze(0) # テンソルに変換してから1次元追加
+data = data_transforms(img).unsqueeze(0) # テンソルに変換してから1次元追加
 # print(data)
 # print(data.shape)
 
 data = data.to(DEVICE)
-output = model(data) # 推定処理
+with torch.no_grad(): # 推定のために勾配計算の無効化モードで
+    output = model(data) # 推定処理
 tmp = output[0,:,:,:].permute(1, 2, 0) # 画像出力用に次元の入れ替え
 tmp = tmp.to("cpu").detach().numpy() # np配列に変換
 img_tmp = (tmp * 255).astype(np.uint8) # 0-1の範囲なので255倍して画像用データへ

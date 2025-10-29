@@ -26,22 +26,22 @@ else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 data_transforms = T.Compose([T.Resize(cf.cellSize), T.ToTensor()])
 
-exts = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG'] # 処理対象の拡張子
+exts = [".jpg", ".png", ".jpeg", ".JPG", ".PNG", ".JPEG"] # 処理対象の拡張子
 fileList = list(pathlib.Path(image_dir_path).iterdir())
 fileList.sort()
 for i in range(len(fileList)):
     if fileList[i].is_file() and (fileList[i].suffix in exts): # ファイルのみ処理する
         file_name = fileList[i]
 
-        img = Image.open(file_name).convert('L') # カラー指定で開く
+        img = Image.open(file_name).convert("L") # カラー指定で開く
         i_w, i_h = img.size
-        data = data_transforms(img)
-        data = data.unsqueeze(0) # テンソルに変換してから1次元追加
+        data = data_transforms(img).unsqueeze(0) # テンソルに変換してから1次元追加
         print(data)
         print(data.shape)
 
         data = data.to(DEVICE)
-        output = model(data) # 推定処理
+        with torch.no_grad(): # 推定のために勾配計算の無効化モードで
+            output = model(data) # 推定処理
         print(output)
         print(output.shape)
 

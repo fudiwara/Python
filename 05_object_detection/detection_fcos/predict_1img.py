@@ -32,9 +32,8 @@ data_transforms = T.Compose([T.ToTensor()])
 # 画像の読み込み・変換
 img = Image.open(image_path).convert("RGB") # カラー指定で開く
 i_w, i_h = img.size
-data = data_transforms(img).unsqueeze(0) # テンソルに変換してから1次元追加
+data = data_transforms(img).unsqueeze(0).to(DEVICE) # テンソルに変換してから1次元追加
 
-data = data.to(DEVICE)
 with torch.no_grad(): # 推定のために勾配計算の無効化モードで
     outputs = model(data) # 推定処理
 # print(outputs)
@@ -43,7 +42,7 @@ scores = outputs[0]["scores"].detach().cpu().numpy()
 labels = outputs[0]["labels"].detach().cpu().numpy()
 # print(bboxs, scores, labels)
 
-img = cv.cvtColor(np.array(img, dtype=np.uint8), cv.COLOR_RGB2BGR)
+img = cv.cvtColor(np.array(img, dtype = np.uint8), cv.COLOR_RGB2BGR)
 for i in range(len(scores)):
     b = bboxs[i] # 入力画像のスケールの座標
     # print(b)

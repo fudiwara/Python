@@ -23,8 +23,8 @@ model_G, model_D = cf.Generator(), cf.Discriminator()
 model_G, model_D = nn.DataParallel(model_G), nn.DataParallel(model_D)
 model_G, model_D = model_G.to(DEVICE), model_D.to(DEVICE)
 
-params_G = torch.optim.Adam(model_G.parameters(), lr=0.0002, betas=(0.5, 0.999))
-params_D = torch.optim.Adam(model_D.parameters(), lr=0.0002, betas=(0.5, 0.999))
+params_G = torch.optim.AdamW(model_G.parameters(), lr=0.0002, betas=(0.5, 0.999), weight_decay=0.01)
+params_D = torch.optim.AdamW(model_D.parameters(), lr=0.000005, betas=(0.5, 0.999), weight_decay=0.01)
 
 # ロスを計算するためのラベル変数 (PatchGAN)
 ones = torch.ones(cf.batchSize, 1, 3, 3).to(DEVICE)
@@ -50,7 +50,7 @@ for i in range(cf.epochSize):
         fake_target_tensor = fake_target.detach() # 偽画像を一時保存
 
         # 偽画像を本物と騙せるようにロスを計算
-        LAMBD = 100.0 # BCEとMAEの係数
+        LAMBD = 25.0 # BCEとMAEの係数
         out = model_D(torch.cat([fake_target, imgs_src], dim=1))
         loss_G_bce = bce_loss(out, ones[:batch_len])
         loss_G_mae = LAMBD * mae_loss(fake_target, real_target)
@@ -101,8 +101,8 @@ for i in range(cf.epochSize):
     torchvision.utils.save_image(buf_save_imgs, f"{log_dir}/_e_{i + 1:03}.png", value_range=(-1.0, 1.0), normalize = True)
 
     # モデルの保存
-    if 0 < i and i % 10 == 0:
-        torch.save(model_G.state_dict(), f"{log_dir}/_gen_{i:03}.pth")
+    # if 0 < i and i % 10 == 0:
+    #     torch.save(model_G.state_dict(), f"{log_dir}/_gen_{i:03}.pth")
     #     torch.save(model_D.state_dict(), f"{log_dir}/_dis_{i:03}.pth") # こちらは基本的には使わない
 
 torch.save(model_G.state_dict(), f"{log_dir}/_gen_{cf.epochSize:03}.pth")

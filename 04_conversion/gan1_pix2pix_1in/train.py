@@ -23,7 +23,7 @@ model_G, model_D = cf.Generator(), cf.Discriminator()
 model_G, model_D = nn.DataParallel(model_G), nn.DataParallel(model_D)
 model_G, model_D = model_G.to(DEVICE), model_D.to(DEVICE)
 
-params_G = torch.optim.AdamW(model_G.parameters(), lr=0.00012, betas=(0.5, 0.999), weight_decay=0.01)
+params_G = torch.optim.AdamW(model_G.parameters(), lr=0.00015, betas=(0.5, 0.999), weight_decay=0.01)
 params_D = torch.optim.AdamW(model_D.parameters(), lr=0.0000015, betas=(0.5, 0.999), weight_decay=0.01)
 
 # ロスを計算するためのラベル変数 (PatchGAN)

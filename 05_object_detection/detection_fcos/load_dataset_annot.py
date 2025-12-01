@@ -25,7 +25,8 @@ class ImageFolderAnnotationRect(Dataset):
         lines = []
         with open(annotations_path, "r") as f:# self.filelines = f.read().split('\n')
             for line in f:
-                if 1 < len(line.split(" ")):
+                line = line.strip()
+                if len(line.split(" ")) > 0: # 空行はスキップ
                     lines.append(line)
         self.filelines = lines
         # print(self.filelines)
@@ -47,19 +48,26 @@ class ImageFolderAnnotationRect(Dataset):
         labels = []
         areas = []
         iscrowd = []
-        for i in range(len(l) - 1):
-            p = l[i + 1].split(",") # カンマ区切りのセットリスト
-            x0 = float(p[0]) # 実数で読み込む
-            y0 = float(p[1])
-            x1 = float(p[2])
-            y1 = float(p[3])
-            cls = int(p[4])
-            area = (x1 - x0) * (y1 - y0)
-            boxes.append([x0, y0, x1, y1])
-            labels.append(cls)
-            areas.append(area)
-            iscrowd.append(0)
-            # print(idx, i, cls, x0, y0, x1, y1)
+
+        if len(l) == 1: # 空のターゲットを作成
+            boxes = torch.zeros((0, 4), dtype=torch.float32)
+            labels = torch.zeros((0,), dtype=torch.int64)
+            areas = torch.zeros((0,), dtype=torch.float32)
+            iscrowd = torch.zeros((0,), dtype=torch.int64)
+        else:
+            for i in range(len(l) - 1):
+                p = l[i + 1].split(",") # カンマ区切りのセットリスト
+                x0 = float(p[0]) # 実数で読み込む
+                y0 = float(p[1])
+                x1 = float(p[2])
+                y1 = float(p[3])
+                cls = int(p[4])
+                area = (x1 - x0) * (y1 - y0)
+                boxes.append([x0, y0, x1, y1])
+                labels.append(cls)
+                areas.append(area)
+                iscrowd.append(0)
+                # print(idx, i, cls, x0, y0, x1, y1)
         
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
         labels = torch.as_tensor(labels, dtype=torch.int64)

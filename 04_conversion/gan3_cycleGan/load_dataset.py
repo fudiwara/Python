@@ -11,7 +11,7 @@ from torch.utils.data import Dataset, DataLoader
 import config as cf
 
 class ImageFolder_2dom(Dataset):
-    IMG_EXT = [".jpg", ".jpeg", ".png", ".bmp", ".JPG", ".JPEG", ".PNG", ".BMP"]
+    IMG_EXT = [".jpg", ".jpeg", ".png", ".bmp"]
 
     def __init__(self, imgs_dir0, imgs_dir1): # 画像ファイルのパス一覧
         self.img_paths0 = self._get_img_paths(imgs_dir0)
@@ -36,7 +36,7 @@ class ImageFolder_2dom(Dataset):
 
     def _get_img_paths(self, img_dir): # 指定ディレクトリ内の画像ファイルパス一覧
         img_dir = pathlib.Path(img_dir)
-        img_paths = [p for p in img_dir.iterdir() if p.suffix in ImageFolder_2dom.IMG_EXT]
+        img_paths = [p for p in img_dir.iterdir() if p.suffix.lower() in ImageFolder_2dom.IMG_EXT]
         return img_paths
 
     def __len__(self): # ディレクトリ内の画像ファイルの数
@@ -70,7 +70,6 @@ def load_datasets(imgs_dir0, imgs_dir1):
 if __name__ == "__main__":
     import time
     f_tm = time.time()
-    # python load_dataset.py /work/dataset/mrst/c_others/ /work/dataset/mrst/loundraw/
 
     dataloader = load_datasets(sys.argv[1], sys.argv[2])
     print(len(dataloader))

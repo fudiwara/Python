@@ -12,8 +12,8 @@ import config as cf
 
 class ImageFolder_directory(Dataset):
     def __init__(self, img_dir_path, data_transforms): # 画像フォルダのルートパスを指定
-        IMG_EXTS = [".jpg", ".jpeg", ".png", ".bmp", ".JPG", ".JPEG", ".PNG", ".BMP"]
-        self.img_paths = sorted([p for p in img_dir_path.glob("**/*") if p.suffix in IMG_EXTS])
+        IMG_EXTS = [".jpg", ".jpeg", ".png", ".bmp"]
+        self.img_paths = sorted([p for p in img_dir_path.glob("**/*") if p.suffix.lower() in IMG_EXTS])
         cls_num = []
         for i in range(len(self.img_paths)): # 画像のパス一覧の一つ親側のフォルダ名からクラスIDを得る
             cls_num.append(int(self.img_paths[i].parent.name))

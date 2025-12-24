@@ -10,7 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 import config as cf
 
 class ImageFolder_p2p1(Dataset):
-    IMG_EXT = [".jpg", ".jpeg", ".png", ".bmp", ".JPG", ".JPEG", ".PNG", ".BMP"]
+    IMG_EXT = [".jpg", ".jpeg", ".png", ".bmp"]
 
     def __init__(self, imgs_dir): # 画像ファイルのパス一覧
         self.img_paths = self._get_img_paths(imgs_dir)
@@ -25,7 +25,7 @@ class ImageFolder_p2p1(Dataset):
 
     def _get_img_paths(self, imgs_dir): # 指定ディレクトリ内の画像ファイルパス一覧
         imgs_dir = pathlib.Path(imgs_dir)
-        img_paths = [p for p in imgs_dir.iterdir() if p.suffix in ImageFolder_p2p1.IMG_EXT]
+        img_paths = [p for p in imgs_dir.iterdir() if p.suffix.lower() in ImageFolder_p2p1.IMG_EXT]
         return img_paths
 
     def __len__(self): # ディレクトリ内の画像ファイルの数

@@ -18,8 +18,8 @@ else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
 
-IMG_EXTS = [".jpg", ".jpeg", ".png", ".bmp", ".JPG", ".JPEG", ".PNG", ".BMP"] # 処理対象の拡張子
-img_paths = sorted([p for p in image_dir_path.iterdir() if p.suffix in cf.IMG_EXTS])
+IMG_EXTS = [".jpg", ".jpeg", ".png", ".bmp"] # 処理対象の拡張子
+img_paths = sorted([p for p in image_dir_path.iterdir() if p.suffix.lower() in cf.IMG_EXTS])
 for i in range(len(img_paths)):
     image_path = img_paths[i]
     img = Image.open(image_path).convert("RGB") # カラー指定で開く

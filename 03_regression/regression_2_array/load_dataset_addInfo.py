@@ -57,7 +57,7 @@ class ImageFolder_reg2(Dataset):
         # fileList.sort() 連番に処理したい場合はいれておく
         i_p = []
         for i in range(len(fileList)):
-            if fileList[i].is_file() and (fileList[i].suffix in cf.ext):
+            if fileList[i].is_file() and (fileList[i].suffix.lower() in cf.ext):
                 face_atr = fileList[i].stem.split('_')
 
                 if len(face_atr) == cf.sep_num:

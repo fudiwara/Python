@@ -23,8 +23,7 @@ if(not output_path.exists()): output_path.mkdir()
 model = cf.build_model("eval")
 if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = False))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu"), weights_only = False))
-model.to(DEVICE)
-model.eval()
+model.to(DEVICE).eval()
 
 data_transforms = torchvision.transforms.Compose([torchvision.transforms.ToTensor()])
 

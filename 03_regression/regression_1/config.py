@@ -18,7 +18,7 @@ sep_val = 0
 val_rate = 150
 
 # 読み込み対象の画像拡張子
-ext = [".jpg", ".jpeg", ".png", ".bmp", ".JPG", ".JPEG", ".PNG", ".BMP"]
+ext = [".jpg", ".jpeg", ".png", ".bmp"]
 
 # 画像の一辺のサイズ (この大きさにリサイズされるので要確認)
 cellSize = 200

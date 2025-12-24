@@ -18,7 +18,7 @@ else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
 
-img_paths = sorted([p for p in image_dir_path.iterdir() if p.suffix in cf.IMG_EXTS])
+img_paths = sorted([p for p in image_dir_path.iterdir() if p.suffix.lower() in cf.IMG_EXTS])
 for i in range(len(fileList)):
     image_path = img_paths[i]
 

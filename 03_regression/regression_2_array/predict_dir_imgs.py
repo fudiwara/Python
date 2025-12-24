@@ -20,7 +20,7 @@ data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T
 
 fileList = sorted(list(pathlib.Path(image_dir_path).iterdir()))
 for i in range(len(fileList)):
-    if fileList[i].is_file() and (fileList[i].suffix in cf.ext): # ファイルのみ処理する
+    if fileList[i].is_file() and (fileList[i].suffix.lower() in cf.ext): # ファイルのみ処理する
         image_path = fileList[i]
 
         # 画像の読み込み・変換

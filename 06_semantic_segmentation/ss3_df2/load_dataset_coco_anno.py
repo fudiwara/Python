@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=False, num_workers=4, collate_fn=collate_fn)
 
-    if(not img_dir.exists()): img_dir.mkdir() # 出力用のディレクトリ生成
+    img_dir.mkdir(parents = True, exist_ok = True) # ディレクトリ生成
 
     print("don pre-pro")
     for n, (imgs, lbls) in enumerate(train_loader):

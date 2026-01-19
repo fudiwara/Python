@@ -16,7 +16,7 @@ print(DEVICE)
 model_path = sys.argv[1] # モデルのパス
 image_dir_path = sys.argv[2] # 入力画像が入っているディレクトリのパス
 output_dir = pathlib.Path(sys.argv[3]) # 画像を保存するフォルダ
-if(not output_dir.exists()): output_dir.mkdir() # ディレクトリ生成
+output_dir.mkdir(parents = True, exist_ok = True) # ディレクトリ生成
 np.set_printoptions(precision=3, suppress=True) # 指数表現をやめて小数点以下の桁数を指定する
 
 # フォントの設定
@@ -27,56 +27,54 @@ model = cf.build_model("eval")
 if DEVICE == "cuda":  model.load_state_dict(torch.load(model_path))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.to(DEVICE).eval()
-
-exts = [".jpg", ".png", ".jpeg", ".JPG", ".PNG", ".JPEG"] # 処理対象の拡張子
 data_transforms = T.Compose([T.ToTensor()])
 
+IMG_EXTS = [".jpg", ".png", ".jpeg"] # 処理対象の拡張子
+fileList = sorted([p for p in image_dir_path.iterdir() if p.suffix.lower() in IMG_EXTS])
+
 proc_time = []
-fileList = list(pathlib.Path(image_dir_path).iterdir())
-fileList.sort()
 for f in range(len(fileList)):
-    if fileList[f].is_file() and (fileList[f].suffix in exts): # ファイルのみ処理する
-        s_tm = time.time()
-        image_path = fileList[f]
-        file_name = pathlib.Path(image_path)
+    s_tm = time.time()
+    image_path = fileList[f]
+    file_name = pathlib.Path(image_path)
 
-        # 画像の読み込み・変換
-        img = Image.open(image_path).convert("RGB") # カラー指定で開く
-        i_w, i_h = img.size
-        data = data_transforms(img).unsqueeze(0) # テンソルに変換してから1次元追加
+    # 画像の読み込み・変換
+    img = Image.open(image_path).convert("RGB") # カラー指定で開く
+    i_w, i_h = img.size
+    data = data_transforms(img).unsqueeze(0) # テンソルに変換してから1次元追加
 
-        data = data.to(DEVICE)
-        with torch.no_grad(): # 推定のために勾配計算の無効化モードで
-            outputs = model(data) # 推定処理
-        # print(outputs)
-        bboxs = outputs[0]["boxes"].detach().cpu().numpy()
-        scores = outputs[0]["scores"].detach().cpu().numpy()
-        labels = outputs[0]["labels"].detach().cpu().numpy()
-        # print(bboxs, scores, labels)
+    data = data.to(DEVICE)
+    with torch.no_grad(): # 推定のために勾配計算の無効化モードで
+        outputs = model(data) # 推定処理
+    # print(outputs)
+    bboxs = outputs[0]["boxes"].detach().cpu().numpy()
+    scores = outputs[0]["scores"].detach().cpu().numpy()
+    labels = outputs[0]["labels"].detach().cpu().numpy()
+    # print(bboxs, scores, labels)
 
-        img = cv.cvtColor(np.array(img, dtype=np.uint8), cv.COLOR_RGB2BGR)
-        for i in range(len(scores)):
-            b = bboxs[i]
-            # print(b)
-            prd_val = scores[i]
-            if prd_val < cf.thDetection: break # 閾値以下が出現した段階で終了
-            prd_cls = labels[i]
+    img = cv.cvtColor(np.array(img, dtype=np.uint8), cv.COLOR_RGB2BGR)
+    for i in range(len(scores)):
+        b = bboxs[i]
+        # print(b)
+        prd_val = scores[i]
+        if prd_val < cf.thDetection: break # 閾値以下が出現した段階で終了
+        prd_cls = labels[i]
 
-            x0, y0 = int(b[0]), int(b[1])
-            p0, p1 = (x0, y0), (int(b[2]), int(b[3]))
-            print(prd_cls, prd_val, p0, p1)
+        x0, y0 = int(b[0]), int(b[1])
+        p0, p1 = (x0, y0), (int(b[2]), int(b[3]))
+        print(prd_cls, prd_val, p0, p1)
 
-            cid = prd_cls % len(cf.box_col)
-            text = f" {prd_cls}  {prd_val:.3f} " # クラスと確率
-            (t_w, t_h), baseline = cv.getTextSize(text, cv.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得
-            cv.rectangle(img, p0, p1, cf.box_col[cid], thickness = 2) # 検出領域の矩形
-            cv.rectangle(img, (x0, y0 - t_h), (x0 + t_w, y0), cf.box_col[cid], thickness = -1) # テキストの背景の矩形
-            cv.putText(img, text, p0, cv.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv.LINE_AA)
+        cid = prd_cls % len(cf.box_col)
+        text = f" {prd_cls}  {prd_val:.3f} " # クラスと確率
+        (t_w, t_h), baseline = cv.getTextSize(text, cv.FONT_HERSHEY_DUPLEX, font_scale, 1) # テキスト部の矩形サイズ取得
+        cv.rectangle(img, p0, p1, cf.box_col[cid], thickness = 2) # 検出領域の矩形
+        cv.rectangle(img, (x0, y0 - t_h), (x0 + t_w, y0), cf.box_col[cid], thickness = -1) # テキストの背景の矩形
+        cv.putText(img, text, p0, cv.FONT_HERSHEY_DUPLEX, font_scale, (255, 255, 255), 1, cv.LINE_AA)
 
-        output_filename = f"{file_name.stem}_det.png"
-        output_img_path = output_dir / output_filename
-        cv.imwrite(str(output_img_path), img)
-        proc_time.append((time.time() - s_tm))
+    output_filename = f"{file_name.stem}_det.png"
+    output_img_path = output_dir / output_filename
+    cv.imwrite(str(output_img_path), img)
+    proc_time.append((time.time() - s_tm))
 
 proc_time = np.array(proc_time)
 print(np.mean(proc_time))

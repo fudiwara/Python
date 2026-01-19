@@ -17,7 +17,7 @@ input_file_name = pathlib.Path(sys.argv[2]) # 入力のmp4ファイル
 vc = cv.VideoCapture(sys.argv[2])
 
 output_path = pathlib.Path(sys.argv[3]) # 出力先ディレクトリ
-if(not output_path.exists()): output_path.mkdir()
+output_path.mkdir(parents = True, exist_ok = True) # ディレクトリ生成
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")

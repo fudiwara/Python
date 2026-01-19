@@ -16,7 +16,7 @@ print(DEVICE)
 model_path = sys.argv[1] # モデルのパス
 image_dir_path = pathlib.Path(sys.argv[2]) # 入力画像が入っているディレクトリのパス
 output_dir = pathlib.Path(sys.argv[3]) # 画像を保存するフォルダ
-if(not output_dir.exists()): output_dir.mkdir() # ディレクトリ生成
+output_dir.mkdir(parents = True, exist_ok = True) # ディレクトリ生成
 np.set_printoptions(precision=3, suppress=True) # 指数表現をやめて小数点以下の桁数を指定する
 
 # フォントと枠の設定
@@ -29,12 +29,12 @@ model = cf.build_model("eval")
 if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = False))
 else: model.load_state_dict(torch.load(model_path, torch.device("cpu"), weights_only = False))
 model.to(DEVICE).eval()
-
-exts = [".jpg", ".png", ".jpeg", ".JPG", ".PNG", ".JPEG"] # 処理対象の拡張子
 data_transforms = T.Compose([T.ToTensor()])
 
+exts = [".jpg", ".png", ".jpeg"] # 処理対象の拡張子
+fileList = sorted([p for p in image_dir_path.glob("**/*") if p.suffix.lower()  in exts])
+
 proc_time = []
-fileList = sorted([p for p in image_dir_path.glob("**/*") if p.suffix in exts])
 for f in range(len(fileList)):
     s_tm = time.time()
     image_path = fileList[f]
@@ -74,7 +74,7 @@ for f in range(len(fileList)):
 
     output_filename = f"{file_name.stem}_det.png"
     output_img_path = output_dir / output_filename
-    cv.imwrite(str(output_img_path), img)
+    cv.imwrite(output_img_path, img)
     proc_time.append((time.time() - s_tm))
 
 proc_time = np.array(proc_time)

@@ -18,7 +18,7 @@ model_path = sys.argv[1] # モデルのパス
 image_path = sys.argv[2] # 入力画像のパス
 file_name = pathlib.Path(image_path)
 output_path = pathlib.Path(sys.argv[3]) # 出力先のパス
-if(not output_path.exists()): output_path.mkdir() # 出力先がない場合はフォルダ生成
+output_path.mkdir(parents = True, exist_ok = True) # ディレクトリ生成
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.Generator(3, cf.resBlocks).to(DEVICE)

@@ -16,7 +16,7 @@ model_path = sys.argv[1] # モデルのパス
 image_dir_path = pathlib.Path(sys.argv[2]) # テスト画像が入っているディレクトリのパス
 annotations_path = sys.argv[3] # アノテーションファイルへのフルパス(上のフォルダに依存しない)
 output_dir = pathlib.Path(sys.argv[4]) # 画像を保存するフォルダ
-if(not output_dir.exists()): output_dir.mkdir() # ディレクトリ生成
+output_dir.mkdir(parents = True, exist_ok = True) # ディレクトリ生成
 np.set_printoptions(precision=3, suppress=True) # 指数表現をやめて小数点以下の桁数を指定する
 
 # フォントと枠の設定

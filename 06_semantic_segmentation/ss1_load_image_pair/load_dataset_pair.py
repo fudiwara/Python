@@ -73,19 +73,19 @@ class ImageFolder_pair(Dataset):
         return img, target
 
 def get_images_list(dirA, dirB): # 2つのディレクトリを比較して同じファイル名があるパスだけをお互いに残す
-    exts = [".jpg", ".png", ".jpeg", ".JPG", ".PNG", ".JPEG"]
+    exts = [".jpg", ".png", ".jpeg"]
     setA, setB = set(), set()
 
     fileList = list(pathlib.Path(dirA).glob("**/*"))
     fileList.sort()
     for i in range(len(fileList)): # ターゲットのディレクトリ内を順にチェックしていく
-        if fileList[i].is_file() and (fileList[i].suffix in exts): # ファイルのみ処理する
+        if fileList[i].is_file() and (fileList[i].suffix.lower() in exts): # 指定拡張子のみ処理する
             setA.add(fileList[i].name) # ファイル名のみをsetに追加 (stemは使わない)
 
     fileList = list(pathlib.Path(dirB).glob("**/*"))
     fileList.sort()
     for i in range(len(fileList)): # ターゲットのディレクトリ内を順にチェックしていく
-        if fileList[i].is_file() and (fileList[i].suffix in exts): # ファイルのみ処理する
+        if fileList[i].is_file() and (fileList[i].suffix.lower() in exts): # 指定拡張子のみ処理する
             setB.add(fileList[i].name) # ファイル名のみをsetに追加 (stemは使わない)
     
     andSet = setA & setB # ファイル名のみで積集合を得る

@@ -18,22 +18,20 @@ else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.eval()
 data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
 
-fileList = sorted(list(pathlib.Path(image_dir_path).iterdir()))
+fileList = sorted([p for p in image_dir_path.iterdir() if p.suffix.lower() in cf.ext])
 for i in range(len(fileList)):
-    if fileList[i].is_file() and (fileList[i].suffix.lower() in cf.ext): # ファイルのみ処理する
-        image_path = fileList[i]
+    image_path = fileList[i]
 
-        # 画像の読み込み・変換
-        img = Image.open(image_path).convert("RGB")
-        data = data_transforms(img)
-        data = data.unsqueeze(0) # テンソルに変換してから1次元追加
+    # 画像の読み込み・変換
+    img = Image.open(image_path).convert("RGB")
+    data = data_transforms(img).unsqueeze(0) # テンソルに変換してから1次元追加
 
-        # 推定処理
-        data = data.to(DEVICE)
-        with torch.no_grad(): # 推定のために勾配計算の無効化モードで
-            outputs = model(data)
+    # 推定処理
+    data = data.to(DEVICE)
+    with torch.no_grad(): # 推定のために勾配計算の無効化モードで
+        outputs = model(data)
 
-        # 結果には正規化用の係数を乗算する
-        pred_val_0 = outputs[0][0].item() * cf.val_rate_0
-        pred_val_1 = outputs[0][1].item() * cf.val_rate_1
-        print(f"{pred_val_0:.3f} {pred_val_1:.3f} {image_path.name}")
+    # 結果には正規化用の係数を乗算する
+    pred_val_0 = outputs[0][0].item() * cf.val_rate_0
+    pred_val_1 = outputs[0][1].item() * cf.val_rate_1
+    print(f"{pred_val_0:.3f} {pred_val_1:.3f} {image_path.name}")

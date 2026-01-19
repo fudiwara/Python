@@ -24,8 +24,7 @@ for i in range(len(fileList)):
 
     # 画像の読み込み・変換
     img = Image.open(image_path).convert("RGB")
-    data = data_transforms(img)
-    data = data.unsqueeze(0) # テンソルに変換してから1次元追加
+    data = data_transforms(img).unsqueeze(0) # テンソルに変換してから1次元追加
 
     # 推定処理
     data = data.to(DEVICE)

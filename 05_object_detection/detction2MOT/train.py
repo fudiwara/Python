@@ -1,4 +1,4 @@
-import sys, os, time
+import sys, os, time, pathlib
 sys.dont_write_bytecode = True
 import torch
 import torchvision
@@ -13,8 +13,8 @@ id_str = sys.argv[1]
 annot_file_name = sys.argv[2]
 img_dir_path = sys.argv[3]
 path_log = "_l_" + id_str + ".csv" # loss推移の記録ファイル
-output_dir = "_log_" + id_str # 保存用ディレクトリ
-if not os.path.exists(output_dir): os.mkdir(output_dir) # ディレクトリ生成
+output_dir = pathlib.Path("_log_" + id_str) # 保存用ディレクトリ
+output_dir.mkdir(parents = True, exist_ok = True) # ディレクトリ生成
 
 # 作成したカスタム・データセット
 train_dataset = ld.ImageFolderAnnotationRect(img_dir_path, annot_file_name, ld.get_transform(train=True))

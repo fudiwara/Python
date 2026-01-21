@@ -9,7 +9,7 @@ import setup_dataset_det as ds
 id_str = sys.argv[1] # IDの文字列
 dataset_root_dir = pathlib.Path(sys.argv[2]) # データセットのルートディレクトリ
 
-dataset_path = ds.dataset_split(dataset_root_dir, 0.8, all_data = True) # YOLO用のデータセット構築
+dataset_path = ds.dataset_split(dataset_root_dir, 0.8, all_data = True, g_colab=True) # YOLO用のデータセット構築
 
 output_dir = pathlib.Path("_log_" + id_str) # 出力ディレクトリ
 output_dir.mkdir(exist_ok = True)

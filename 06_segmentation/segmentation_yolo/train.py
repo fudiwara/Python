@@ -25,7 +25,7 @@ yaml_path = pathlib.Path("_buf.yaml") # 一時的なYAMLファイル
 with open(yaml_path, mode = "w", encoding = "utf-8") as f:
     yaml.safe_dump(data_dict, f, allow_unicode = True, default_flow_style = False)
 
-model = YOLO("yolo11s.pt") 
+model = YOLO("yolo11s-seg.pt") 
 results = model.train(
     data = yaml_path, # データセット設定ファイルへのパス
     epochs = 100, # エポック数

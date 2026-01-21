@@ -4,7 +4,7 @@ import random
 import shutil
 import pathlib
 
-def dataset_split(master_root, train_ratio, all_data = False): # データセットのランダム分割
+def dataset_split(master_root, train_ratio, all_data = False, g_colab=False): # データセットのランダム分割
     master_root = master_root.resolve()
 
     # ファイルのリストアップ
@@ -27,8 +27,11 @@ def dataset_split(master_root, train_ratio, all_data = False): # データセッ
     val_files = image_files[split_idx:]
     print(f"Total: {len(image_files)}, Train: {len(train_files)}, Val: {len(val_files)}")
     
-    split_root = pathlib.Path(__file__).resolve()
-    split_root = split_root.parent / "_dataset_yolo_dynamic_split" # シンボリックリンクを配置するルートディレクトリ
+    if g_colab:
+        split_root = pathlib.Path("/content/_dataset_yolo_dynamic_split") # Colab環境用のルートディレクトリ
+    else:
+        split_root = pathlib.Path(__file__).resolve() # スクリプトの場所を基準にする
+        split_root = split_root.parent / "_dataset_yolo_dynamic_split" # シンボリックリンクを配置するルートディレクトリ
     
     if split_root.is_dir(): # 既存のディレクトリを削除し、再作成 (前のリンクをクリアするため)
         print(f"Cleaning previous split directory: {split_root}")

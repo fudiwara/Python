@@ -1,11 +1,9 @@
 import cv2 as cv
 import numpy as np
 
-
 def get_color(idx):
     idx = idx * 3
     return ((37 * idx) % 255, (17 * idx) % 255, (29 * idx) % 255)
-
 
 def plot_tracking(image, tlwhs, obj_ids, scores=None, frame_id=0, ids2=None):
     im = np.ascontiguousarray(np.copy(image))
@@ -36,7 +34,6 @@ def plot_tracking(image, tlwhs, obj_ids, scores=None, frame_id=0, ids2=None):
         cv.putText(im, id_text, (intbox[0], intbox[1]), cv.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
                     thickness=text_thickness)
     return im
-
 
 _COLORS = np.array(
     [

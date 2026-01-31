@@ -66,7 +66,7 @@ class annotation_yolotxt_det(Dataset):
                 if len(parts) != 5:
                     continue # 不正行はスキップ
 
-                cls_id = int(parts[0])
+                cls_id = int(parts[0]) + 1 # YOLO形式だと0スタートなので1プラス
                 xc = float(parts[1])
                 yc = float(parts[2])
                 w  = float(parts[3])
@@ -79,7 +79,8 @@ class annotation_yolotxt_det(Dataset):
                 h  = max(0.0, min(1.0, h))
 
                 x0, y0, x1, y1 = yolo_to_xyxy(xc, yc, w, h, img_w, img_h)
-
+                if x1 <= x0 or y1 <= y0:
+                    continue
                 area = (x1 - x0) * (y1 - y0)
                 boxes.append([x0, y0, x1, y1])
                 labels.append(cls_id)

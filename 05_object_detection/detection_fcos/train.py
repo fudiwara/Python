@@ -9,16 +9,15 @@ import load_dataset_annot as ld
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(DEVICE)
-id_str = sys.argv[1]
-annot_file_name = sys.argv[2]
-img_dir_path = sys.argv[3]
+id_str = sys.argv[1] # 識別用の文字列
+img_dir_path = pathlib.Path(sys.argv[2]) # データセットのディレクトリ
 path_log = "_l_" + id_str + ".csv" # loss推移の記録ファイル
 output_dir = pathlib.Path("_log_" + id_str) # 保存用ディレクトリ
 output_dir.mkdir(parents = True, exist_ok = True) # ディレクトリ生成
 
 # 作成したカスタム・データセット
-train_dataset = ld.ImageFolderAnnotationRect(img_dir_path, annot_file_name, ld.get_transform(train=True))
-val_dataset = ld.ImageFolderAnnotationRect(img_dir_path, annot_file_name, ld.get_transform(train=False))
+train_dataset = ld.annotation_yolotxt_det(img_dir_path, ld.get_transform(train=True))
+val_dataset = ld.annotation_yolotxt_det(img_dir_path, ld.get_transform(train=False))
 
 # データセットを訓練セットとテストセットに分割
 # torch.manual_seed(1)

@@ -1,6 +1,8 @@
 import math
 import os, sys
 import time
+import io
+from contextlib import redirect_stdout
 
 import torch
 import torchvision.models.detection.mask_rcnn
@@ -81,25 +83,24 @@ def _get_iou_types(model):
 @torch.inference_mode()
 def evaluate(model, data_loader, device):
     n_threads = torch.get_num_threads()
-    # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
     cpu_device = torch.device("cpu")
     model.eval()
     metric_logger = U.MetricLogger(delimiter=" ")
     header = "Eval:"
 
-    sys.stdout = open("buf.txt","w") # 処理過程がprintされるのでファイル出力に逃がす
-    coco = get_coco_api_from_dataset(data_loader.dataset)
-    iou_types = _get_iou_types(model)
-    coco_evaluator = CocoEvaluator(coco, iou_types)
-    sys.stdout.close()
-    sys.stdout = sys.__stdout__
+    f = io.StringIO() # pycocotoolsの初期化時の標準出力をキャプチャして抑制する
+    with redirect_stdout(f):
+        coco = get_coco_api_from_dataset(data_loader.dataset)
+        iou_types = _get_iou_types(model)
+        coco_evaluator = CocoEvaluator(coco, iou_types)
 
     for images, targets in metric_logger.log_every(data_loader, 1, header, False):
         images = list(img.to(device) for img in images)
 
         if torch.cuda.is_available():
             torch.cuda.synchronize()
+        
         model_time = time.time()
         outputs = model(images)
 
@@ -110,32 +111,29 @@ def evaluate(model, data_loader, device):
         evaluator_time = time.time()
         coco_evaluator.update(res)
         evaluator_time = time.time() - evaluator_time
-        # metric_logger.update(model_time=model_time, evaluator_time=evaluator_time)
         metric_logger.update(evaluator_time=evaluator_time)
 
-    sys.stdout = open("buf.txt","w") # 見ておきたい適合率と再現率だけを抽出する
-    # gather the stats from all processes
-    metric_logger.synchronize_between_processes()
-    # print("Averaged stats:", metric_logger)
-    coco_evaluator.synchronize_between_processes()
+    with redirect_stdout(f): # 同期・集計処理をメモリ内バッファに対して実行
+        # 全プロセスからの統計を収集
+        metric_logger.synchronize_between_processes()
+        coco_evaluator.synchronize_between_processes()
 
-    # accumulate predictions from all images
-    coco_evaluator.accumulate()
-    coco_evaluator.summarize()
+        # 予測結果を蓄積し、要約(summarize)を実行
+        coco_evaluator.accumulate()
+        coco_evaluator.summarize()
 
-    sys.stdout.close()
-    sys.stdout = sys.__stdout__
-    with open("buf.txt", "r") as f: logls = f.read().split('\n')
-    os.remove("buf.txt")
-    l = logls[2].split(" ")
-    ap = float(l[-1])
-    l = logls[10].split(" ")
-    ar = float(l[-1])
-    if ap + ar == 0: f1_v = 0
-    else: f1_v = 2 * ap * ar / (ap + ar)
-    print(f"  f1: {f1_v:.04f}")
-    print(logls[2].lstrip())
-    print(logls[10].lstrip())
+    stats = coco_evaluator.coco_eval[iou_types[0]].stats  # 内部の stats 属性から値を直接取得
+    ap = stats[0]  # Average Precision  (AP) @[ IoU=0.50:0.95 | area= all | maxDets=100 ]
+    ar = stats[8]  # Average Recall     (AR) @[ IoU=0.50:0.95 | area= all | maxDets=100 ]
+
+    if ap + ar == 0: # F1スコアの計算
+        f1_v = 0.0
+    else:
+        f1_v = 2 * ap * ar / (ap + ar)
+
+    print(f"  f1: {f1_v:.04f}") # 結果の表示
+    print(f" Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = {ap:.3f}")
+    print(f" Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = {ar:.3f}")
+
     torch.set_num_threads(n_threads)
-    # return coco_evaluator
     return f1_v

@@ -1,6 +1,8 @@
 import math
 import os, sys
 import time
+import io
+from contextlib import redirect_stdout
 
 import torch
 import torchvision.models.detection.mask_rcnn
@@ -29,7 +31,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
         # print(targets[0]["image_id"])
-        with torch.cuda.amp.autocast(enabled=scaler is not None):
+        # with torch.cuda.amp.autocast(enabled=scaler is not None):
+        # with torch.amp.autocast("cuda", enabled=scaler is not None):
+        with torch.autocast(device_type=device, enabled=scaler is not None):
             loss_dict = model(images, targets)
             losses = sum(loss for loss in loss_dict.values())
 
@@ -88,54 +92,55 @@ def evaluate(model, data_loader, device):
     metric_logger = U.MetricLogger(delimiter=" ")
     header = "Eval:"
 
-    sys.stdout = open("buf.txt","w") # 処理過程がprintされるのでファイル出力に逃がす
-    coco = get_coco_api_from_dataset(data_loader.dataset)
-    iou_types = _get_iou_types(model)
-    coco_evaluator = CocoEvaluator(coco, iou_types)
-    sys.stdout.close()
-    sys.stdout = sys.__stdout__
+    f = io.StringIO() # 準備段階の標準出力をバッファに逃がす
+    with redirect_stdout(f):
+        coco = get_coco_api_from_dataset(data_loader.dataset)
 
-    for images, targets in metric_logger.log_every(data_loader, 1, header, False):
+        if "info" not in coco.dataset:
+            coco.dataset["info"] = []
+        if "licenses" not in coco.dataset:
+            coco.dataset["licenses"] = []
+
+        iou_types = _get_iou_types(model)
+        coco_evaluator = CocoEvaluator(coco, iou_types) # modelの構成から iou_types (["box", "segm"] など) を取得
+
+    for images, targets in metric_logger.log_every(data_loader, 100, header): # 推論ループ
         images = list(img.to(device) for img in images)
 
         if torch.cuda.is_available():
             torch.cuda.synchronize()
-        model_time = time.time()
+        
         outputs = model(images)
-
         outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
-        model_time = time.time() - model_time
-
+        
         res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
-        evaluator_time = time.time()
         coco_evaluator.update(res)
-        evaluator_time = time.time() - evaluator_time
-        # metric_logger.update(model_time=model_time, evaluator_time=evaluator_time)
-        metric_logger.update(evaluator_time=evaluator_time)
 
-    sys.stdout = open("buf.txt","w") # 見ておきたい適合率と再現率だけを抽出する
-    # gather the stats from all processes
-    metric_logger.synchronize_between_processes()
-    # print("Averaged stats:", metric_logger)
-    coco_evaluator.synchronize_between_processes()
+    with redirect_stdout(f): # 統計の集計の標準出力をバッファへ
+        metric_logger.synchronize_between_processes()
+        coco_evaluator.synchronize_between_processes()
+        coco_evaluator.accumulate()
+        coco_evaluator.summarize()
 
-    # accumulate predictions from all images
-    coco_evaluator.accumulate()
-    coco_evaluator.summarize()
+    f1_scores = {} # IoUタイプごとのF1スコアを格納する辞書
+    
+    for iou_type in iou_types:
+        # coco_eval[iou_type].stats に AP/AR 等の数値が入っている
+        stats = coco_evaluator.coco_eval[iou_type].stats
+        ap = stats[0]  # AP @[ IoU=0.50:0.95 ]
+        ar = stats[8]  # AR @[ IoU=0.50:0.95 | maxDets=100 ]
+        
+        if ap + ar == 0:
+            f1 = 0.0
+        else:
+            f1 = 2 * ap * ar / (ap + ar)
+        
+        f1_scores[iou_type] = f1
+        
+        print(f"{iou_type:4s} AP: {ap:.3f}, AR: {ar:.3f}, F1: {f1:.4f}")
 
-    sys.stdout.close()
-    sys.stdout = sys.__stdout__
-    with open("buf.txt", "r") as f: logls = f.read().split('\n')
-    os.remove("buf.txt")
-    l = logls[4].split(" ") # cocoの表示結果
-    ap = float(l[-1])
-    l = logls[12].split(" ")
-    ar = float(l[-1])
-    if ap + ar == 0: f1_v = 0
-    else: f1_v = 2 * ap * ar / (ap + ar)
-    print(f"  f1: {f1_v:.04f}")
-    print(logls[4].lstrip())
-    print(logls[12].lstrip())
+    # 返り値としては、bboxのF1値を優先的に返す（学習ログ用）
+    main_f1 = f1_scores.get("bbox", list(f1_scores.values())[0] if f1_scores else 0.0)
+
     torch.set_num_threads(n_threads)
-    # return coco_evaluator
-    return f1_v
+    return main_f1

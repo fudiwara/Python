@@ -25,7 +25,7 @@ yaml_path = pathlib.Path("_buf.yaml") # 一時的なYAMLファイル
 with open(yaml_path, mode = "w", encoding = "utf-8") as f:
     yaml.safe_dump(data_dict, f, allow_unicode = True, default_flow_style = False)
 
-model = YOLO("yolo26s.pt") 
+model = YOLO("yolo26s.pt")
 results = model.train(
     data = yaml_path, # データセット設定ファイルへのパス
     epochs = 20, # エポック数
@@ -33,8 +33,8 @@ results = model.train(
     batch = -1, # CUDAの60%になるように
     degrees = 5.0, # 回転の角度
     rect = True, # 矩形学習を有効化
-    name = ".", # output_dir直下に保存するため"."にする
-    project = output_dir, # 親の出力ディレクトリ
+    project = str(output_dir.resolve().parent), # 親の出力ディレクトリ
+    name = output_dir.name,
     exist_ok = True # 上書き許可
 )
 yaml_path.unlink() # 一時的なYAMLファイルを削除

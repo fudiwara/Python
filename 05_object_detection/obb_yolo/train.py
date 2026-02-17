@@ -33,8 +33,8 @@ results = model.train(
     batch = -1, # CUDAの60%になるように
     degrees = 5.0, # 回転の角度
     rect = True, # 矩形学習を有効化
-    name = ".", # output_dir直下に保存するため"."にする
-    project = output_dir, # 親の出力ディレクトリ
+    project = str(output_dir.resolve().parent), # 親の出力ディレクトリ
+    name = output_dir.name,
     exist_ok = True # 上書き許可
 )
 yaml_path.unlink() # 一時的なYAMLファイルを削除

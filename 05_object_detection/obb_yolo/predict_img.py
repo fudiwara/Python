@@ -4,7 +4,7 @@ import pathlib
 import cv2 as cv
 from ultralytics import YOLO
 
-model = YOLO(sys.argv[1]) # モデルのパス
+model = YOLO(sys.argv[1]) # モデルの読み込み
 image_path = pathlib.Path(sys.argv[2]) # 入力画像のパス
 img = cv.imread(image_path)
 

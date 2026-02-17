@@ -4,7 +4,7 @@ import pathlib
 import cv2 as cv
 from ultralytics import YOLO
 
-model = YOLO(sys.argv[1]) # モデルのパス
+model = YOLO(sys.argv[1]) # モデルの読み込み
 image_dir_path = pathlib.Path(sys.argv[2]) # 入力画像が入っているディレクトリのパス
 output_dir = pathlib.Path(sys.argv[3]) # 画像を保存するフォルダ
 output_dir.mkdir(parents = True, exist_ok = True) # ディレクトリ生成

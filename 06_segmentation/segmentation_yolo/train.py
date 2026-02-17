@@ -36,8 +36,8 @@ results = model.train(
     scale = 0.5, # 拡大縮小の変動幅を持たせる
     freeze = 10, # 転移学習の強化
     degrees = 5.0, # 回転の角度
-    name = ".", # output_dir直下に保存するため"."にする
-    project = output_dir, # 親の出力ディレクトリ
+    project = str(output_dir.resolve().parent), # 親の出力ディレクトリ
+    name = output_dir.name,
     exist_ok = True # 上書き許可
 
 )

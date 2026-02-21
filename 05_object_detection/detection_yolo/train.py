@@ -32,7 +32,6 @@ results = model.train(
     imgsz = 512, # 画像サイズ
     batch = -1, # CUDAの60%になるように
     degrees = 5.0, # 回転の角度
-    rect = True, # 矩形学習を有効化
     project = str(output_dir.resolve().parent), # 親の出力ディレクトリ
     name = output_dir.name,
     exist_ok = True # 上書き許可

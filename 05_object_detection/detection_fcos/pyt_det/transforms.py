@@ -6,7 +6,6 @@ from torch import nn, Tensor
 from torchvision import ops
 from torchvision.transforms import functional as F, InterpolationMode, transforms as T
 
-
 def _flip_coco_person_keypoints(kps, width):
     flip_inds = [0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15]
     flipped_data = kps[:, flip_inds]
@@ -16,7 +15,6 @@ def _flip_coco_person_keypoints(kps, width):
     flipped_data[inds] = 0
     return flipped_data
 
-
 class Compose:
     def __init__(self, transforms):
         self.transforms = transforms
@@ -24,6 +22,13 @@ class Compose:
     def __call__(self, image, target):
         for t in self.transforms:
             image, target = t(image, target)
+        return image, target
+
+class ColorJitter(T.ColorJitter): # 画像の明るさ、コントラスト、彩度、色相をランダムに変更
+    def forward(
+        self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
+    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+        image = super().forward(image) # 親クラス torchvision.transforms.ColorJitter の処理を呼び出し
         return image, target
 
 class RandomHorizontalFlip(T.RandomHorizontalFlip):
@@ -67,7 +72,6 @@ class PILToTensor(nn.Module):
         image = F.pil_to_tensor(image)
         return image, target
 
-
 class ConvertImageDtype(nn.Module):
     def __init__(self, dtype: torch.dtype) -> None:
         super().__init__()
@@ -78,7 +82,6 @@ class ConvertImageDtype(nn.Module):
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         image = F.convert_image_dtype(image, self.dtype)
         return image, target
-
 
 class RandomIoUCrop(nn.Module):
     def __init__(
@@ -166,7 +169,6 @@ class RandomIoUCrop(nn.Module):
 
                 return image, target
 
-
 class RandomZoomOut(nn.Module):
     def __init__(
         self, fill: Optional[List[float]] = None, side_range: Tuple[float, float] = (1.0, 4.0), p: float = 0.5
@@ -229,7 +231,6 @@ class RandomZoomOut(nn.Module):
 
         return image, target
 
-
 class RandomPhotometricDistort(nn.Module):
     def __init__(
         self,
@@ -289,7 +290,6 @@ class RandomPhotometricDistort(nn.Module):
 
         return image, target
 
-
 class ScaleJitter(nn.Module):
     """Randomly resizes the image and its bounding boxes  within the specified scale range.
     The class implements the Scale Jitter augmentation as described in the paper
@@ -341,7 +341,6 @@ class ScaleJitter(nn.Module):
                 )
 
         return image, target
-
 
 class FixedSizeCrop(nn.Module):
     def __init__(self, size, fill=0, padding_mode="constant"):
@@ -417,7 +416,6 @@ class FixedSizeCrop(nn.Module):
 
         return img, target
 
-
 class RandomShortestSize(nn.Module):
     def __init__(
         self,
@@ -452,7 +450,6 @@ class RandomShortestSize(nn.Module):
                 )
 
         return image, target
-
 
 def _copy_paste(
     image: torch.Tensor,
@@ -553,7 +550,6 @@ def _copy_paste(
             out_target["iscrowd"] = out_target["iscrowd"][valid_targets]
 
     return image, out_target
-
 
 class SimpleCopyPaste(torch.nn.Module):
     def __init__(self, blending=True, resize_interpolation=F.InterpolationMode.BILINEAR):

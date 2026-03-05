@@ -35,19 +35,25 @@ val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=in
 model = cf.build_model("train").to(DEVICE)
 params = [p for p in model.parameters() if p.requires_grad]
 optimizer = torch.optim.SGD(params, lr=0.005, momentum=0.9, weight_decay=0.0005)
-lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1) # 3エポックごとに学習率が1/10
+lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=cf.epochSize, eta_min=0.0001)
 
-with open(path_log, mode = "w") as f: print(f"loss,f1v", file = f)
+with open(path_log, mode = "w") as f: print(f"epoch,loss,cls,reg,center,map,f1,lr", file = f)
 s_tm = time.time()
 for epoch in range(cf.epochSize):
-    loss = train_one_epoch(model, optimizer, train_loader, DEVICE, epoch, print_freq=1) # 学習
+    metric_logger = train_one_epoch(model, optimizer, train_loader, DEVICE, epoch, print_freq=1) # 学習
+    l_total = metric_logger.meters["loss"].global_avg
+    l_cls = metric_logger.meters["classification"].global_avg
+    l_reg = metric_logger.meters["bbox_regression"].global_avg
+    l_center = metric_logger.meters["bbox_ctrness"].global_avg
+    curr_lr = optimizer.param_groups[0]["lr"]
+
     lr_scheduler.step() # 学習率の更新
-    f1v = evaluate(model, val_loader, device = DEVICE) # テストデータセットの評価
+    val_map, val_f1 = evaluate(model, val_loader, device = DEVICE) # テストデータセットの評価
     # 毎エポックモデルの保存する場合 (とりあえずコメントアウト)
     # torch.save(model.state_dict(), f"{output_dir}/_m_{id_str}_{epoch + 1:03}.pth")
 
     # 学習の状況をCSVに保存
-    with open(path_log, mode = "a") as f: print(f"{loss},{f1v}", file = f)
+    with open(path_log, mode = "a") as f: print(f"{epoch+1},{l_total:.6f},{l_cls:.6f},{l_reg:.6f},{l_center:.6f},{val_map:.6f},{val_f1:.6f},{curr_lr:.8f}", file = f)
 
 torch.save(model.state_dict(), f"{output_dir}/_m_{id_str}_{cf.epochSize:03}.pth")
 print("done %.0fs" % (time.time() - s_tm))

@@ -20,7 +20,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
     header = f"[{epoch + 1} / {cf.epochSize}]"
 
     lr_scheduler = None
-    if epoch == 0:
+    if epoch == 0: # 最初のエポックのウォームアップ用
         warmup_factor = 1.0 / 1000
         warmup_iters = min(1000, len(data_loader) - 1)
 
@@ -33,6 +33,8 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
         with torch.autocast(device_type=device, enabled=scaler is not None):
             loss_dict = model(images, targets)
+            # if "bbox_ctrness" in loss_dict:
+            #     loss_dict["bbox_ctrness"] = loss_dict["bbox_ctrness"] * 2.0 # Centernessの損失の重みを2倍にする
             losses = sum(loss for loss in loss_dict.values())
 
         # reduce losses over all GPUs for logging purposes
@@ -64,8 +66,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
     el_tm = time.time() - s_tm
     print(f"t_loss: {losses.item():.04f}")
 
-    # return metric_logger
-    return losses.item()
+    return metric_logger
 
 
 def _get_iou_types(model):
@@ -136,4 +137,4 @@ def evaluate(model, data_loader, device):
     print(f" Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = {ar:.3f}")
 
     torch.set_num_threads(n_threads)
-    return f1_v
+    return ap, f1_v

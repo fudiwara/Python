@@ -4,8 +4,9 @@ import random
 import shutil
 import pathlib
 
-def dataset_split(master_root, train_ratio, all_data = False, g_colab=False): # データセットのランダム分割
-    master_root = master_root.resolve()
+def dataset_split(master_root, train_ratio, all_data = False): # データセットのランダム分割
+    g_colab = "COLAB_GPU" in os.environ or "GREETING" in os.environ # Colab環境の判定
+    master_root = master_root.resolve() # 絶対パスに変換
 
     # ファイルのリストアップ
     IMG_EXTS = [".jpg", ".jpeg", ".png", ".bmp", ".webp"]

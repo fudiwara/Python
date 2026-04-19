@@ -20,19 +20,14 @@ for f in range(len(fileList)):
     img = cv.imread(image_path)
     res = model.predict(img, save = False, conf = 0.3)
 
-    bboxs = res[0].boxes.xyxy.detach().cpu().numpy() # xyxyの矩形情報
-    scores = res[0].boxes.conf.detach().cpu().numpy() # スコアを取得
+    polys = res[0].obb.xyxyxyxy.cpu().numpy() # ポリゴンの座標
+    scores = res[0].obb.conf.detach().cpu().numpy() # スコアを取得
 
-    for i in range(len(bboxs)):
-        x0, y0, x1, y1 = bboxs[i]
-        print(scores[i], x0, y0, x1, y1)
-        p0 = (int(x0), int(y0))
-        p1 = (int(x1), int(y1))
-        cv.rectangle(img, p0, p1, (0, 255, 0), 2) # 検出結果の矩形描画
+    for i in range(len(polys)):
+        pts = polys[i].reshape(-1, 2).astype(int)
+        cv.polylines(img, [pts], isClosed = True, color = (0, 255, 0), thickness = 2) # 検出結果のポリゴン描画
+        print(scores[i], pts)
 
-        score_text = f"{scores[i]:.2f}"
-        cv.putText(img, score_text, (int(x0), int(y0) - 6), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1)
-    
     output_filename = f"{image_path.stem}_det.png"
     output_img_path = output_dir / output_filename
     cv.imwrite(output_img_path, img)

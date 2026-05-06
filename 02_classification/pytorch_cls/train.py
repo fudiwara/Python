@@ -1,13 +1,11 @@
-import sys, time, os
+import sys, time, os, pathlib
 sys.dont_write_bytecode = True
 import torch
 import torchvision
 import torch.nn as nn
-import torchvision.transforms as T
 from torch.utils.data import DataLoader
-import torch.optim as optim
 from torchvision.datasets import ImageFolder
-import numpy as np
+
 import config as cf
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -15,11 +13,11 @@ print(DEVICE)
 id_str = sys.argv[1] # 識別用のID
 dataset_path = sys.argv[2] # フォルダのあるパス
 path_log = "_l_" + id_str + ".csv"
-log_dir = "_log_" + id_str
-if not os.path.exists(log_dir): os.mkdir(log_dir) # モデルの保存用のフォルダ
+log_dir = pathlib.Path("_log_" + id_str)
+log_dir.mkdir(exist_ok = True) # モデルの保存用のフォルダ
 disp_score_t = ""
 
-datasets_raw = ImageFolder(dataset_path, cf.data_transforms) # データの読み込み
+datasets_raw = ImageFolder(dataset_path, cf.transforms_train) # データの読み込み
 
 # 学習・検証データを分割
 train_data_size = int(cf.splitRateTrain * len(datasets_raw))
@@ -34,11 +32,9 @@ val_loader = DataLoader(val_dataset, batch_size = cf.batchSize, num_workers = os
 # モデル、損失関数、最適化関数、収束率の定義
 model = cf.build_model("train").to(DEVICE)
 criterion = nn.CrossEntropyLoss()
-# optimizer = optim.Adam(model.parameters())
-optimizer = optim.SGD(model.parameters(), lr = 0.001, momentum = 0.9)
-rate_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = cf.epochSize // 3, gamma = 0.1)
+optimizer = torch.optim.AdamW(model.parameters(), lr = 1e-4, weight_decay = 1e-8)
 
-def Train_Eval(model, criterion, optimizer, scheduler, data_loader, device, epoch, max_epoch, is_val = False):
+def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoch, is_val = False):
     total_loss = 0.0
     total_acc = 0.0
     counter = 0
@@ -46,7 +42,8 @@ def Train_Eval(model, criterion, optimizer, scheduler, data_loader, device, epoc
     model.eval() if is_val else model.train()
     for n, (data, label) in enumerate(data_loader): # バッチ毎にデータ読み込み
         counter += data.shape[0]
-        if is_val == False: optimizer.zero_grad()
+        if is_val == False:
+            optimizer.zero_grad()
         data = data.to(device)
         label = label.to(device)
         if is_val:
@@ -70,10 +67,10 @@ def Train_Eval(model, criterion, optimizer, scheduler, data_loader, device, epoc
         else: 
             print(f"\r {disp_score_t} l: {total_loss / (n + 1):.05f} a: {total_acc / counter:.03f}", end = "")
 
-    if is_val == False: scheduler.step() # 学習率の変更
+    # if is_val == False: rate_scheduler.step() # 学習率の変更
 
     # 学習に使った画像の一部を保存
-    torchvision.utils.save_image(data[:min(cf.batchSize, 16)], f"{log_dir}/_i_{id_str}_{epoch + 1:03}.png", value_range=(-1.0,1.0), normalize=True)
+    torchvision.utils.save_image(data[:min(cf.batchSize, 16)], log_dir / f"_i_{id_str}_{epoch + 1:03}.png", value_range=(-1.0,1.0), normalize=True)
 
     return total_loss / (n + 1), total_acc / counter
 
@@ -83,17 +80,16 @@ s_tm = time.time()
 
 for epoch in range(cf.epochSize):
     n_tm = time.time()
-    train_loss, train_acc = Train_Eval(model, criterion, optimizer, rate_scheduler, train_loader, DEVICE, epoch, cf.epochSize) 
-    val_loss, val_acc = Train_Eval(model, criterion, optimizer, rate_scheduler, val_loader, DEVICE, epoch, cf.epochSize, is_val = True)
+    train_loss, train_acc = Train_Eval(model, criterion, optimizer, train_loader, DEVICE, epoch, cf.epochSize) 
+    val_loss, val_acc = Train_Eval(model, criterion, optimizer, val_loader, DEVICE, epoch, cf.epochSize, is_val = True)
     print(f" {time.time() - n_tm:.0f}s")
 
-    # if best_loss is None or val_loss < best_loss: # lossを更新したときのみ保存
-    #     best_loss = val_loss
-    # 毎エポックモデルの保存する場合 (とりあえずコメントアウト)
-    # torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{epoch + 1:03}.pth")
+    if best_loss is None or val_loss < best_loss: # lossを更新したときのみ保存
+        best_loss = val_loss
+        torch.save(model.state_dict(), log_dir / f"_m_{id_str}_best.pth") # モデルの保存
 
     # 学習の状況をCSVに保存
     with open(path_log, mode = "a") as f: print(f"{train_loss},{val_loss},{train_acc},{val_acc}", file = f)
 
-torch.save(model.state_dict(), f"{log_dir}/_m_{id_str}_{cf.epochSize:03}.pth") # モデルの保存
+torch.save(model.state_dict(), log_dir / f"_m_{id_str}_{cf.epochSize:03}.pth") # モデルの保存
 print(f"done {time.time() - s_tm:.0f}s")

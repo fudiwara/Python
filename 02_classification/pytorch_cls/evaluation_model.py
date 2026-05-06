@@ -1,11 +1,10 @@
 import sys, os, time
 sys.dont_write_bytecode = True
 import torch
-import torchvision.transforms as T
 from torch.utils.data import DataLoader
 from torchvision.datasets import ImageFolder
-import numpy as np
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
 import config as cf
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -15,14 +14,12 @@ dataset_path = sys.argv[2] # テスト用の画像が入ったディレクトリ
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval").to(DEVICE)
-if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = False))
-else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
+model.load_state_dict(torch.load(model_path, map_location = DEVICE, weights_only = False))
 model.eval()
 
 # データの読み込み (バッチサイズは適宜変更する)
 s_tm = time.time()
-data_transforms = T.Compose([T.Resize(cf.cellSize), T.CenterCrop(cf.cellSize), T.ToTensor()])
-test_data = ImageFolder(dataset_path, data_transforms)
+test_data = ImageFolder(dataset_path, cf.transforms_eval)
 print(test_data.class_to_idx)
 bs = cf.batchSize
 # bs = int(bs * 0.5) + 1 # 必要メモリ量に応じた調整 (場合によっては1以下をかける)

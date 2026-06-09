@@ -26,9 +26,9 @@ val_data_size = len(datasets_raw) - train_data_size
 indices = torch.randperm(len(datasets_raw)).tolist()
 train_idx, val_idx = indices[:train_data_size], indices[train_data_size:]
 train_dataset = Subset(copy.copy(datasets_raw), train_idx)
-val_dataset   = Subset(copy.copy(datasets_raw), val_idx)
+val_dataset = Subset(copy.copy(datasets_raw), val_idx)
 train_dataset.dataset.transform = cf.transforms_train
-val_dataset.dataset.transform   = cf.transforms_eval
+val_dataset.dataset.transform = cf.transforms_eval
 print(datasets_raw.class_to_idx)
 print(len(datasets_raw), train_data_size, val_data_size)
 
@@ -38,7 +38,7 @@ val_loader = DataLoader(val_dataset, batch_size = cf.batchSize, num_workers = os
 # モデル、損失関数、最適化関数、収束率の定義
 model = cf.build_model("train").to(DEVICE)
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.AdamW(model.parameters(), lr = 1e-4, weight_decay = 1e-8)
+optimizer = torch.optim.AdamW(model.parameters(), lr = 0.0001, weight_decay = 1e-8)
 
 def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoch, is_val = False):
     total_loss = 0.0

@@ -1,11 +1,10 @@
-import sys, time, os, pathlib
+import sys, time, os, pathlib, copy
 sys.dont_write_bytecode = True
 
 import torch
 import torchvision
 import torch.nn as nn
-from torch.utils.data import DataLoader
-import torch.optim as optim
+from torch.utils.data import DataLoader, Subset
 
 import config as cf
 import load_dataset_dirs as ld
@@ -19,12 +18,18 @@ log_dir = pathlib.Path("_log_" + id_str)
 log_dir.mkdir(exist_ok = True) # モデルの保存用のフォルダ
 disp_score_t = ""
 
-datasets_raw = ld.ImageFolder_directory(dataset_path, cf.transforms_train) # データの読み込み
+datasets_raw = ld.ImageFolder_directory(dataset_path) # データの読み込み
 
 # 学習・検証データを分割
-train_data_size = int(cf.splitRateTrain * len(datasets_raw))
-val_data_size = len(datasets_raw) - train_data_size
-train_dataset, val_dataset = torch.utils.data.random_split(datasets_raw, [train_data_size, val_data_size])
+train_data_size = int(cf.splitRateTrain * len(datasets_raw)) # 学習サンプルのサイズ
+val_data_size = len(datasets_raw) - train_data_size # 検証サンプルのサイズ
+
+indices = torch.randperm(len(datasets_raw)).tolist() # インデックスをランダムシャッフルしたリスト
+train_idx, val_idx = indices[:train_data_size], indices[train_data_size:] # 各インデックス
+train_dataset = Subset(copy.copy(datasets_raw), train_idx) # 学習用データセット
+val_dataset = Subset(copy.copy(datasets_raw), val_idx) # 検証用データセット
+train_dataset.dataset.transforms = cf.transforms_train # 学習用transformsを学習用データセットに適用
+val_dataset.dataset.transforms = cf.transforms_eval # 検証用transformsを検証用データセットに適用
 print(datasets_raw.class_to_idx)
 print(len(datasets_raw), train_data_size, val_data_size)
 
@@ -44,7 +49,8 @@ def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoc
     model.eval() if is_val else model.train()
     for n, (data, label) in enumerate(data_loader): # バッチ毎にデータ読み込み
         counter += data.shape[0]
-        if is_val == False: optimizer.zero_grad()
+        if is_val == False:
+            optimizer.zero_grad()
         data = data.to(device)
         label = label.to(device)
         if is_val:
@@ -55,7 +61,7 @@ def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoc
         
         loss = criterion(output, label)
         total_loss += loss.item()
-        total_acc += cf.calc_acc(output, label)
+        total_acc += cf.calc_acc(output, label).item()
 
         if is_val == False:
             loss.backward()
@@ -71,7 +77,7 @@ def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoc
     # if is_val == False: rate_scheduler.step() # 学習率の変更
 
     # 学習に使った画像の一部を保存
-    torchvision.utils.save_image(data[:min(cf.batchSize, 16)], f"{log_dir}/_i_{id_str}_{epoch + 1:03}.png", value_range=(-1.0,1.0), normalize=True)
+    torchvision.utils.save_image(data[:min(cf.batchSize, 16)], log_dir / f"_i_{id_str}_{epoch + 1:03}.png", value_range=(-1.0,1.0), normalize=True)
 
     return total_loss / (n + 1), total_acc / counter
 
@@ -87,7 +93,7 @@ for epoch in range(cf.epochSize):
 
     if best_loss is None or val_loss < best_loss: # lossを更新したときのみ保存
         best_loss = val_loss
-        torch.save(model.state_dict(), log_dir / f"best.pth") # モデルの保存
+        torch.save(model.state_dict(), log_dir / "best.pth") # モデルの保存
 
     # 学習の状況をCSVに保存
     with open(path_log, mode = "a") as f: print(f"{train_loss},{val_loss},{train_acc},{val_acc}", file = f)

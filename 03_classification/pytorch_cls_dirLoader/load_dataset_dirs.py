@@ -41,7 +41,7 @@ if __name__ == "__main__":
     import time, pathlib
     f_tm = time.time()
 
-    dataset_raw = ImageFolder_directory(pathlib.Path(sys.argv[1]), cf.data_transforms)
+    dataset_raw = ImageFolder_directory(pathlib.Path(sys.argv[1]), cf.transforms_train)
 
     dataloader = DataLoader(dataset_raw, batch_size = 5) # , shuffle = True)
 

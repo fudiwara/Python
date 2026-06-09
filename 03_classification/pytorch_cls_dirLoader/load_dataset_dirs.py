@@ -10,7 +10,7 @@ import cv2 as cv
 import config as cf
 
 class ImageFolder_directory(Dataset):
-    def __init__(self, img_dir_path, data_transforms): # 画像フォルダのルートパスを指定
+    def __init__(self, img_dir_path, data_transforms = None): # 画像フォルダのルートパスを指定
         IMG_EXTS = [".jpg", ".jpeg", ".png", ".bmp"]
         self.img_paths = sorted([p for p in img_dir_path.glob("**/*") if p.suffix.lower() in IMG_EXTS])
         cls_num = []

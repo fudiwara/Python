@@ -87,7 +87,7 @@ for epoch in range(cf.epochSize):
 
     if best_loss is None or val_loss < best_loss: # lossを更新したときのみ保存
         best_loss = val_loss
-        torch.save(model.state_dict(), log_dir / f"_m_{id_str}_best.pth") # モデルの保存
+        torch.save(model.state_dict(), log_dir / f"best.pth") # モデルの保存
 
     # 学習の状況をCSVに保存
     with open(path_log, mode = "a") as f: print(f"{train_loss},{val_loss},{train_acc},{val_acc}", file = f)

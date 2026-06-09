@@ -1,9 +1,9 @@
-import sys, time, os, pathlib
+import sys, time, os, pathlib, copy
 sys.dont_write_bytecode = True
 import torch
 import torchvision
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import ImageFolder
 
 import config as cf
@@ -17,12 +17,18 @@ log_dir = pathlib.Path("_log_" + id_str)
 log_dir.mkdir(exist_ok = True) # モデルの保存用のフォルダ
 disp_score_t = ""
 
-datasets_raw = ImageFolder(dataset_path, cf.transforms_train) # データの読み込み
+datasets_raw = ImageFolder(dataset_path) # データの読み込み
 
 # 学習・検証データを分割
 train_data_size = int(cf.splitRateTrain * len(datasets_raw))
 val_data_size = len(datasets_raw) - train_data_size
-train_dataset, val_dataset = torch.utils.data.random_split(datasets_raw, [train_data_size, val_data_size])
+
+indices = torch.randperm(len(datasets_raw)).tolist()
+train_idx, val_idx = indices[:train_data_size], indices[train_data_size:]
+train_dataset = Subset(copy.copy(datasets_raw), train_idx)
+val_dataset   = Subset(copy.copy(datasets_raw), val_idx)
+train_dataset.dataset.transform = cf.transforms_train
+val_dataset.dataset.transform   = cf.transforms_eval
 print(datasets_raw.class_to_idx)
 print(len(datasets_raw), train_data_size, val_data_size)
 
@@ -54,7 +60,7 @@ def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoc
         
         loss = criterion(output, label)
         total_loss += loss.item()
-        total_acc += cf.calc_acc(output, label)
+        total_acc += cf.calc_acc(output, label).item()
 
         if is_val == False:
             loss.backward()
@@ -86,7 +92,7 @@ for epoch in range(cf.epochSize):
 
     if best_loss is None or val_loss < best_loss: # lossを更新したときのみ保存
         best_loss = val_loss
-        torch.save(model.state_dict(), log_dir / f"_m_{id_str}_best.pth") # モデルの保存
+        torch.save(model.state_dict(), log_dir / "best.pth") # モデルの保存
 
     # 学習の状況をCSVに保存
     with open(path_log, mode = "a") as f: print(f"{train_loss},{val_loss},{train_acc},{val_acc}", file = f)

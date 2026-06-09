@@ -51,7 +51,7 @@ class build_model(nn.Module):
         super().__init__()
         pretrained = (sw_train_eval == "train")
         self.model = timm.create_model(
-            "convnext_tiny.fb_in22k_ft_in1k", 
+            "convnext_nano.in12k_ft_in1k", 
             pretrained = pretrained,
             num_classes = classesSize
         )

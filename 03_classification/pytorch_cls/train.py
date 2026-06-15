@@ -1,8 +1,7 @@
-import sys, time, os, pathlib, copy
+import sys, time, os, pathlib
 sys.dont_write_bytecode = True
 import torch
 import torchvision
-import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import ImageFolder
 
@@ -25,10 +24,10 @@ val_data_size = len(datasets_raw) - train_data_size
 
 indices = torch.randperm(len(datasets_raw)).tolist()
 train_idx, val_idx = indices[:train_data_size], indices[train_data_size:]
-train_dataset = Subset(copy.copy(datasets_raw), train_idx)
-val_dataset = Subset(copy.copy(datasets_raw), val_idx)
-train_dataset.dataset.transform = cf.transforms_train
-val_dataset.dataset.transform = cf.transforms_eval
+train_dataset = Subset(datasets_raw, train_idx) # 学習用データセット
+val_dataset = Subset(datasets_raw, val_idx) # 検証用データセット
+train_dataset.dataset.transform = cf.transforms_train # 学習用transformsを学習用データセットに適用
+val_dataset.dataset.transform = cf.transforms_eval # 検証用transformsを検証用データセットに適用
 print(datasets_raw.class_to_idx)
 print(len(datasets_raw), train_data_size, val_data_size)
 
@@ -37,10 +36,11 @@ val_loader = DataLoader(val_dataset, batch_size = cf.batchSize, num_workers = os
 
 # モデル、損失関数、最適化関数、収束率の定義
 model = cf.build_model("train").to(DEVICE)
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.AdamW(model.parameters(), lr = 0.0001, weight_decay = 1e-8)
+criterion = torch.nn.CrossEntropyLoss()
+optimizer = torch.optim.AdamW(model.parameters(), lr = 0.0001, weight_decay = 0.01)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max = cf.epochSize, eta_min = 0.000001)
 
-def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoch, is_val = False):
+def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, is_val = False):
     total_loss = 0.0
     total_acc = 0.0
     counter = 0
@@ -68,12 +68,10 @@ def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoc
         
         # lossおよび精度を表示・1エポックが終わる度にかかった時間も表示する
         if is_val == False:
-            disp_score_t = f"{epoch + 1:03} / {max_epoch:03} [ {n + 1:04} / {len(data_loader):04} ] l: {total_loss / (n + 1):.05f} a: {total_acc / counter:.03f}"
+            disp_score_t = f"{epoch + 1:03} / {cf.epochSize:03} [ {n + 1:04} / {len(data_loader):04} ] l: {total_loss / (n + 1):.05f} a: {total_acc / counter:.03f}"
             print(f"\r {disp_score_t}", end = "")
         else: 
             print(f"\r {disp_score_t} l: {total_loss / (n + 1):.05f} a: {total_acc / counter:.03f}", end = "")
-
-    # if is_val == False: rate_scheduler.step() # 学習率の変更
 
     # 学習に使った画像の一部を保存
     torchvision.utils.save_image(data[:min(cf.batchSize, 16)], log_dir / f"_i_{id_str}_{epoch + 1:03}.png", value_range=(-1.0,1.0), normalize=True)
@@ -86,8 +84,9 @@ s_tm = time.time()
 
 for epoch in range(cf.epochSize):
     n_tm = time.time()
-    train_loss, train_acc = Train_Eval(model, criterion, optimizer, train_loader, DEVICE, epoch, cf.epochSize) 
-    val_loss, val_acc = Train_Eval(model, criterion, optimizer, val_loader, DEVICE, epoch, cf.epochSize, is_val = True)
+    train_loss, train_acc = Train_Eval(model, criterion, optimizer, train_loader, DEVICE, epoch) 
+    val_loss, val_acc = Train_Eval(model, criterion, optimizer, val_loader, DEVICE, epoch, is_val = True)
+    scheduler.step() # 学習率の変更
     print(f" {time.time() - n_tm:.0f}s")
 
     if best_loss is None or val_loss < best_loss: # lossを更新したときのみ保存

@@ -24,14 +24,14 @@ class ImageFolder_directory(Dataset):
 
             # print(cls_num[i], str(self.img_paths[i]))
         self.cls_num = cls_num
-        self.transforms = data_transforms
+        self.transform = data_transforms
         self.class_to_idx = {class_names[i]: i for i in range(cf.classesSize)} # クラス名とクラスIDの対応辞書
 
     def __getitem__(self, idx):
         img_path = self.img_paths[idx]
         img = cv.cvtColor(cv.imread(str(img_path)), cv.COLOR_BGR2RGB)
 
-        img = self.transforms(img)
+        img = self.transform(img)
         return img, self.cls_num[idx]
 
     def __len__(self): # ディレクトリ内の画像ファイルの数

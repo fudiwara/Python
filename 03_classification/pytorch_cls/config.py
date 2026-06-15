@@ -15,7 +15,7 @@ classesSize = 10
 epochSize = 20
 
 # ミニバッチのサイズ
-batchSize = 64
+batchSize = 32
 
 # 学習時のサンプルを学習：検証データに分ける学習側の割合
 splitRateTrain = 0.8
@@ -25,13 +25,13 @@ transforms_train = T.Compose([
     T.ToImage(), # テンソル変換の前にPIL画像に変換
     T.Resize(int(cellSize * 1.2), antialias=True), # 画像を少し大きくリサイズしてからランダムクロップ
     T.RandomRotation(degrees = 5), # 画像をランダムに回転
-    T.RandomApply([T.GaussianBlur(5, sigma = (0.1, 2.0))], p = 0.2), # 画像をランダムにぼかす
+    T.RandomApply([T.GaussianBlur(5, sigma = (0.1, 5.0))], p = 0.5), # 画像をランダムにぼかす
     T.ColorJitter(brightness = 0.2, contrast = 0.2, saturation = 0, hue = 0), # 画像の明るさとコントラストをランダムに変化
     T.RandomHorizontalFlip(0.5), # 画像をランダムに左右反転
     T.RandomCrop(cellSize), # 画像をランダムに切り抜き
     T.ToDtype(torch.float32, scale=True), # float32の[0.0, 1.0]にスケール変換
     T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # 画像を正規化
-    T.RandomErasing(p=0.2, scale=(0.02, 0.33), ratio=(0.3, 3.3)) # 画像の一部をランダムに消す
+    T.RandomErasing(p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3)) # 画像の一部をランダムに消す
 ])
 
 transforms_eval = T.Compose([
@@ -51,7 +51,7 @@ class build_model(nn.Module):
         super().__init__()
         pretrained = (sw_train_eval == "train")
         self.model = timm.create_model(
-            "convnext_nano.in12k_ft_in1k", 
+            "mobilenetv3_large_100.ra_in1k", 
             pretrained = pretrained,
             num_classes = classesSize
         )

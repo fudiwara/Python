@@ -51,7 +51,7 @@ class build_model(nn.Module):
         super().__init__()
         pretrained = (sw_train_eval == "train")
         self.model = timm.create_model(
-            "mobilenetv3_large_100.ra_in1k", 
+            "mobilenetv3_large_100.ra_in1k", # 実際に使う場合はEfficientNetV2等も検討すること
             pretrained = pretrained,
             num_classes = classesSize
         )

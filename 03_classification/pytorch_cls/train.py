@@ -16,20 +16,18 @@ log_dir = pathlib.Path("_log_" + id_str)
 log_dir.mkdir(exist_ok = True) # モデルの保存用のフォルダ
 disp_score_t = ""
 
-datasets_raw = ImageFolder(dataset_path) # データの読み込み
+datasets_raw_train = ImageFolder(dataset_path, transform = cf.transforms_train) # データの読み込み
+datasets_raw_val = ImageFolder(dataset_path, transform = cf.transforms_eval) # データの読み込み
 
 # 学習・検証データを分割
-train_data_size = int(cf.splitRateTrain * len(datasets_raw))
-val_data_size = len(datasets_raw) - train_data_size
-
-indices = torch.randperm(len(datasets_raw)).tolist()
+train_data_size = int(cf.splitRateTrain * len(datasets_raw_train))
+indices = torch.randperm(len(datasets_raw_train)).tolist()
 train_idx, val_idx = indices[:train_data_size], indices[train_data_size:]
-train_dataset = Subset(datasets_raw, train_idx) # 学習用データセット
-val_dataset = Subset(datasets_raw, val_idx) # 検証用データセット
-train_dataset.dataset.transform = cf.transforms_train # 学習用transformsを学習用データセットに適用
-val_dataset.dataset.transform = cf.transforms_eval # 検証用transformsを検証用データセットに適用
-print(datasets_raw.class_to_idx)
-print(len(datasets_raw), train_data_size, val_data_size)
+
+train_dataset = Subset(datasets_raw_train, train_idx) # 学習用データセット
+val_dataset = Subset(datasets_raw_val, val_idx) # 検証用データセット
+print(datasets_raw_train.class_to_idx)
+print(len(datasets_raw_train), train_data_size, len(val_dataset))
 
 train_loader = DataLoader(train_dataset, batch_size = cf.batchSize, num_workers = os.cpu_count(), shuffle = True)
 val_loader = DataLoader(val_dataset, batch_size = cf.batchSize, num_workers = os.cpu_count())

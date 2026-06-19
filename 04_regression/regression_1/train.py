@@ -23,6 +23,7 @@ datasets_raw = ld.ImageFolder_reg1(dataset_path, cf.transforms_train) # デー�
 train_data_size = int(cf.splitRateTrain * len(datasets_raw))
 val_data_size = len(datasets_raw) - train_data_size
 train_dataset, val_dataset = torch.utils.data.random_split(datasets_raw, [train_data_size, val_data_size])
+val_dataset.dataset.transform = cf.transforms_eval # 検証データ用の画像変換をセット
 print(len(datasets_raw), train_data_size, val_data_size)
 
 train_loader = DataLoader(train_dataset, batch_size = cf.batchSize, num_workers = os.cpu_count(), pin_memory=True, drop_last=True, shuffle = True)

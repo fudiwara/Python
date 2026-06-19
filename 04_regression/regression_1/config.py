@@ -58,11 +58,12 @@ class build_model(nn.Module):
         pretrained = (sw_train_eval == "train")
         
         self.model = timm.create_model(
-            "efficientnet_b0",
+            "mobilenetv3_large_100.ra_in1k", # 実際に使う場合はEfficientNetV2等も検討すること
             pretrained = pretrained,
             num_classes = 0
         )
-        in_features = self.model.num_features # モデルの出力の次元数
+        # in_features = self.model.num_features # モデルの出力の次元数
+        in_features = self.model.head_hidden_size # モデルの出力の次元数
         self.head = nn.Linear(in_features, 1) # 一つの出力となる回帰ヘッド
 
     def forward(self, input):

@@ -30,7 +30,7 @@ for i, (data, label) in enumerate(test_loader):
         outputs = model(data)
     
     pred = outputs.detach().cpu().view(-1).tolist()
-    gt = label.detach().cpu().view(-1).tolist()
+    gt = torch.as_tensor(label, dtype=torch.float32).view(-1).tolist()
 
     label_list += gt
     pred_list += pred
@@ -50,10 +50,8 @@ mae, rmse, r2, corr = cf.calc_reg_metrics(y_true, y_pred)
 
 f = open(f"_plot{pathlib.Path(model_path).stem}.csv", mode = "w")
 for i in range(len(label_list)):
-    dist_age = val_gt_list[i] - val_es_list[i]
-    val_abs_dist.append(abs(dist_age))
 
-    f.write(f"{val_gt_list[i]},{val_es_list[i]},{dist_age}\n")
+    print(f"{val_gt_list[i]},{val_es_list[i]},{dist_list[i]}", file = f)
 f.close()
 
 val_abs_dist = np.array(val_abs_dist)
@@ -62,6 +60,5 @@ print(np.mean(val_gt_list), np.var(val_gt_list), np.min(val_gt_list), np.max(val
 print(np.mean(val_es_list), np.var(val_es_list), np.min(val_es_list), np.max(val_es_list))
 print(np.mean(val_abs_dist), np.var(val_abs_dist), np.min(val_abs_dist), np.max(val_abs_dist))
 
-cor = np.corrcoef(val_gt_list, val_es_list)
-print(cor[0, 1])
-print(corr)
+print("MAE, RMSE, R2, CORR")
+print(f"{mae}, {rmse}, {r2}, {corr}")

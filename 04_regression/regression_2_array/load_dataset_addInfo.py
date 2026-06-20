@@ -9,42 +9,46 @@ import numpy as np
 
 import config as cf
 
+def list_dataset(img_dir_path):
+    fileList = sorted([p for p in img_dir_path.iterdir() if p.suffix.lower() in cf.img_ext])
+    img_paths, labels_0, labels_1 = [], [], []
+    for i in range(len(fileList)):
+        parts_atrs = fileList[i].stem.split('_')
+
+        if len(parts_atrs) == cf.sep_num:
+            if parts_atrs[cf.sep_val_0].isdecimal() and parts_atrs[cf.sep_val_1].isdecimal():
+                img_paths.append(fileList[i])
+                labels_0.append(float(parts_atrs[cf.sep_val_0]) / cf.val_rate_0)
+                labels_1.append(float(parts_atrs[cf.sep_val_1]) / cf.val_rate_1)
+    return img_paths, labels_0, labels_1
+
 class ImageFolder_reg2(Dataset):
-    def __init__(self, img_dir, transform): # 画像ファイルのパス一覧
-        self.img_paths = self._get_img_paths(img_dir)
+    def __init__(self, img_paths, labels_0, labels_1, indices, transform):
+        self.img_paths = img_paths
+        self.labels_0 = labels_0
+        self.labels_1 = labels_1
+        self.indices = indices
         self.transform = transform
 
     def __getitem__(self, idx):
-        path = self.img_paths[idx]
-        img = cv.cvtColor(cv.imread(str(path)), cv.COLOR_BGR2RGB)
+        real_idx = self.indices[idx]
+        img_path = self.img_paths[real_idx]
+        img = cv.cvtColor(cv.imread(str(img_path)), cv.COLOR_BGR2RGB)
         img = self.transform(img)
 
-        fname_prt = path.stem.split("_")
-        reg_val_0 = float(fname_prt[cf.sep_val_0]) / cf.val_rate_0
-        reg_val_1 = float(fname_prt[cf.sep_val_1]) / cf.val_rate_1
-        out_val = np.array([reg_val_0, reg_val_1]) # それぞれの真値をまとめて配列にする
+        out_val = np.array([self.labels_0[real_idx], self.labels_1[real_idx]]) # それぞれの真値をまとめて配列にする
 
         return img, torch.tensor(out_val.astype(np.float32))
 
-    def _get_img_paths(self, img_dir): # 指定ディレクトリ内の画像ファイルパス一覧
-        fileList = sorted([p for p in img_dir.iterdir() if p.suffix.lower() in cf.ext])
-        i_p = []
-        for i in range(len(fileList)):
-            face_atr = fileList[i].stem.split('_')
-
-            if len(face_atr) == cf.sep_num:
-                if face_atr[cf.sep_val_0].isdecimal() and face_atr[cf.sep_val_1].isdecimal():
-                    i_p.append(fileList[i])
-        return i_p
-
     def __len__(self): # ディレクトリ内の画像ファイルの数
-        return len(self.img_paths)
+        return len(self.indices)
 
 if __name__ == "__main__":
     import time, pathlib
     f_tm = time.time()
 
-    dataset_raw = ImageFolder_reg2(pathlib.Path(sys.argv[1]), cf.transforms_train) # データの読み込み
+    img_paths, labels_0, labels_1 = list_dataset(pathlib.Path(sys.argv[1]))
+    dataset_raw = ImageFolder_reg2(img_paths, labels_0, labels_1, list(range(len(img_paths))), cf.transforms_train) # データの読み込み
 
     dataloader = DataLoader(dataset_raw, batch_size = 3)
 

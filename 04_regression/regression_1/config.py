@@ -51,7 +51,26 @@ transforms_eval = T.Compose([
     T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-def calc_reg_metrics(y_true, y_pred):
+class build_model(torch.nn.Module):
+    def __init__(self, sw_train_eval):
+        super().__init__()
+        pretrained = (sw_train_eval == "train")
+        
+        self.model = timm.create_model(
+            "mobilenetv3_large_100.ra_in1k", # 実際に使う場合はEfficientNetV2等も検討すること
+            pretrained = pretrained,
+            num_classes = 0
+        )
+        # in_features = self.model.num_features # モデルの出力の次元数: EfficientNet等の場合
+        in_features = self.model.head_hidden_size # モデルの出力の次元数: MobileNetV3の場合
+        self.head = torch.nn.Linear(in_features, 1) # 一つの出力となる回帰ヘッド
+
+    def forward(self, input):
+        features = self.model(input)
+        x = self.head(features) # 出力特徴量から回帰で数値予測
+        return x
+
+def calc_reg_metrics(y_true, y_pred): # 評価値計算
     err = y_true - y_pred
     mae = np.mean(np.abs(err)) * val_rate
     rmse = np.sqrt(np.mean(err ** 2)) * val_rate
@@ -65,25 +84,6 @@ def calc_reg_metrics(y_true, y_pred):
     else:
         corr = np.corrcoef(y_true, y_pred)[0, 1]
     return mae, rmse, r2, corr
-
-class build_model(torch.nn.Module):
-    def __init__(self, sw_train_eval):
-        super().__init__()
-        pretrained = (sw_train_eval == "train")
-        
-        self.model = timm.create_model(
-            "mobilenetv3_large_100.ra_in1k", # 実際に使う場合はEfficientNetV2等も検討すること
-            pretrained = pretrained,
-            num_classes = 0
-        )
-        # in_features = self.model.num_features # モデルの出力の次元数
-        in_features = self.model.head_hidden_size # モデルの出力の次元数
-        self.head = torch.nn.Linear(in_features, 1) # 一つの出力となる回帰ヘッド
-
-    def forward(self, input):
-        features = self.model(input)
-        x = self.head(features) # 出力特徴量から回帰で数値予測
-        return x
 
 if __name__ == "__main__":
     import os

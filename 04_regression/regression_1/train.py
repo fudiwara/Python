@@ -37,7 +37,6 @@ model = cf.build_model("train").to(DEVICE)
 criterion = torch.nn.L1Loss() # 外れ値が少ないような対象なら MSELoss もよい
 optimizer = torch.optim.AdamW(model.parameters(), lr = 0.0001)
 
-
 def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoch, is_val = False):
     total_loss = 0.0
     y_true_all, y_pred_all = [], []
@@ -81,7 +80,7 @@ def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoc
     y_pred_all = np.concatenate(y_pred_all)
     mae, rmse, r2, corr = cf.calc_reg_metrics(y_true_all, y_pred_all)
 
-    return avg_loss, mae, rmse, r2, corr
+    return avg_loss, mae, rmse, r2, corr # rmse: 外れ値悪化確認用、r2: 分散量の確認、 corr: 相関係数の確認
 
 best_loss = None
 with open(path_log, mode = "w") as f: print("train_loss,val_loss,train_mae,val_mae,train_rmse,val_rmse,train_r2,val_r2,train_corr,val_corr", file = f)

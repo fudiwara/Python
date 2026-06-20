@@ -19,7 +19,8 @@ model.load_state_dict(torch.load(model_path, map_location = DEVICE, weights_only
 model.eval()
 
 # データの読み込み (バッチサイズは適宜変更する)
-test_data = ld.ImageFolder_reg2(dataset_path, cf.transforms_eval) # データの読み込み
+paths, labels_0, labels_1 = ld.list_dataset(dataset_path)
+test_data = ld.ImageFolder_reg2(paths, labels_0, labels_1, list(range(len(paths))), cf.transforms_eval) # データの読み込み
 test_loader = DataLoader(test_data, batch_size = bs, num_workers = os.cpu_count())
 
 label_list_0, pred_list_0, label_list_1, pred_list_1 = [], [], [], []

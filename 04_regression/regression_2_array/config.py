@@ -1,7 +1,7 @@
 import sys
 sys.dont_write_bytecode = True
+import numpy as np
 import torch
-import torch.nn as nn
 from torchvision.transforms import v2 as T
 import timm
 
@@ -16,9 +16,6 @@ sep_val_1 = 1
 val_rate_0 = 150
 val_rate_1 = 2
 
-# 読み込み対象の画像拡張子
-ext = [".jpg", ".jpeg", ".png", ".bmp"]
-
 # 画像の一辺のサイズ (この大きさにリサイズされるので要確認)
 cellSize = 224
 
@@ -30,6 +27,9 @@ batchSize = 64
 
 # 学習時のサンプルを学習：検証データに分ける学習側の割合
 splitRateTrain = 0.8
+
+# 読み込み対象の画像拡張子
+img_ext = [".jpg", ".jpeg", ".png", ".bmp"]
 
 # データ変換
 transforms_train = T.Compose([
@@ -53,23 +53,39 @@ transforms_eval = T.Compose([
     T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-class build_model(nn.Module):
+class build_model(torch.nn.Module):
     def __init__(self, sw_train_eval):
         super().__init__()
         pretrained = (sw_train_eval == "train")
         
         self.model = timm.create_model(
-            "efficientnet_b0",
+            "mobilenetv3_large_100.ra_in1k", # 実際に使う場合はEfficientNetV2等も検討すること
             pretrained = pretrained,
             num_classes = 0
         )
-        in_features = self.model.num_features # モデルの出力の次元数
-        self.head = nn.Linear(in_features, 2) # 2つの出力の回帰
+        # in_features = self.model.num_features # モデルの出力の次元数: EfficientNet等の場合
+        in_features = self.model.head_hidden_size # モデルの出力の次元数: MobileNetV3の場合
+        self.head = torch.nn.Linear(in_features, 2) # 2つの出力の回帰
 
     def forward(self, input):
         features = self.model(input)
         x = self.head(features) # 出力特徴量から回帰で数値予測
         return x
+
+def calc_reg_metrics(y_true, y_pred, rate_val): # 評価値計算
+    err = y_true - y_pred
+    mae = np.mean(np.abs(err)) * rate_val
+    rmse = np.sqrt(np.mean(err ** 2)) * rate_val
+
+    ss_res = np.sum(err ** 2)
+    ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+    r2 = 1.0 - (ss_res / ss_tot) if ss_tot > 0 else 0.0
+
+    if np.std(y_true) == 0 or np.std(y_pred) == 0:
+        corr = 0.0 # 定数配列だと相関はNaNになる
+    else:
+        corr = np.corrcoef(y_true, y_pred)[0, 1]
+    return mae, rmse, r2, corr # 平均絶対誤差、二乗平均平方根誤差、決定係数、相関係数
 
 if __name__ == "__main__":
     import os

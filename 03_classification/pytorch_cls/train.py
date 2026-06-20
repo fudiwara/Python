@@ -69,7 +69,7 @@ def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, is_val =
             disp_score_t = f"{epoch + 1:03} / {cf.epochSize:03} [ {n + 1:04} / {len(data_loader):04} ] l: {total_loss / (n + 1):.05f} a: {total_acc / counter:.03f}"
             print(f"\r {disp_score_t}", end = "")
         else: 
-            print(f"\r {disp_score_t} l: {total_loss / (n + 1):.05f} a: {total_acc / counter:.03f}", end = "")
+            print(f"\r {disp_score_t} vl: {total_loss / (n + 1):.05f} va: {total_acc / counter:.03f}", end = "")
 
     # 学習に使った画像の一部を保存
     torchvision.utils.save_image(data[:min(cf.batchSize, 16)], log_dir / f"_i_{id_str}_{epoch + 1:03}.png", value_range=(-1.0,1.0), normalize=True)

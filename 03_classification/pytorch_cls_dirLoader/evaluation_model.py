@@ -20,7 +20,8 @@ model.eval()
 
 # データの読み込み (バッチサイズは適宜変更する)
 s_tm = time.time()
-test_data = ld.ImageFolder_directory(dataset_path, cf.transforms_eval)
+paths, labels, class_to_idx = ld.list_dataset(dataset_path)
+test_data = ld.ImageFolder_directory(paths, labels, list(range(len(paths))), cf.transforms_eval, class_to_idx)
 print(test_data.class_to_idx)
 bs = cf.batchSize
 # bs = int(bs * 0.5) + 1 # 必要メモリ量に応じた調整 (場合によっては1以下をかける)

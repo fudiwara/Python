@@ -9,39 +9,47 @@ import cv2 as cv
 
 import config as cf
 
-class ImageFolder_directory(Dataset):
-    def __init__(self, img_dir_path, data_transforms = None): # 画像フォルダのルートパスを指定
-        IMG_EXTS = [".jpg", ".jpeg", ".png", ".bmp"]
-        self.img_paths = sorted([p for p in img_dir_path.glob("**/*") if p.suffix.lower() in IMG_EXTS])
-        cls_num = []
-        class_names = [0] * cf.classesSize
-        for i in range(len(self.img_paths)): # 画像のパス一覧の一つ親側のフォルダ名からクラスIDを得る
-            parent_dir_name = self.img_paths[i].parent.name
-            cls_id = int(parent_dir_name.split("_")[0]) # フォルダ名を _ で分割した先頭をIDにする
-            cls_num.append(cls_id) # 最初の要素をクラスIDとして使用
-            if parent_dir_name not in class_names:
-                class_names[cls_id] = parent_dir_name # クラス名のリストを作る
+def list_dataset(img_dir_path):
+    img_paths = sorted([p for p in img_dir_path.glob("**/*") if p.suffix.lower() in cf.img_ext])
 
-            # print(cls_num[i], str(self.img_paths[i]))
-        self.cls_num = cls_num
-        self.transform = data_transforms
-        self.class_to_idx = {class_names[i]: i for i in range(cf.classesSize)} # クラス名とクラスIDの対応辞書
+    labels = []
+    class_names = [0] * cf.classesSize
+    for p in img_paths:
+        parent_dir_name = p.parent.name
+        cls_id = int(parent_dir_name.split("_")[0]) # フォルダ名を _ で分割した先頭をIDにする
+        labels.append(cls_id) # 最初の要素をクラスIDとして使用
+        if parent_dir_name not in class_names:
+            class_names[cls_id] = parent_dir_name # クラス名のリストを作る
+
+    class_to_idx = {class_names[i]: i for i in range(cf.classesSize)}
+    return img_paths, labels, class_to_idx
+
+class ImageFolder_directory(Dataset):
+    def __init__(self, paths, labels, indices, transform, class_to_idx):
+        self.paths = paths
+        self.labels = labels
+        self.indices = indices
+        self.transform = transform
+        self.class_to_idx = class_to_idx
 
     def __getitem__(self, idx):
-        img_path = self.img_paths[idx]
+        real_idx = self.indices[idx]
+        img_path = self.paths[real_idx]
         img = cv.cvtColor(cv.imread(str(img_path)), cv.COLOR_BGR2RGB)
 
         img = self.transform(img)
-        return img, self.cls_num[idx]
+        return img, self.labels[real_idx]
 
     def __len__(self): # ディレクトリ内の画像ファイルの数
-        return len(self.img_paths)
+        return len(self.indices)
 
 if __name__ == "__main__":
     import time, pathlib
     f_tm = time.time()
 
-    dataset_raw = ImageFolder_directory(pathlib.Path(sys.argv[1]), cf.transforms_train)
+    paths, labels, class_to_idx = list_dataset(pathlib.Path(sys.argv[1]))
+
+    dataset_raw = ImageFolder_directory(paths, labels, list(range(len(paths))), cf.transforms_train, class_to_idx)
 
     dataloader = DataLoader(dataset_raw, batch_size = 5) # , shuffle = True)
 

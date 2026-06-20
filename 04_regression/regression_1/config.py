@@ -14,9 +14,6 @@ sep_val = 0
 # 学習時の値に正規化するための係数
 val_rate = 150
 
-# 読み込み対象の画像拡張子
-ext = [".jpg", ".jpeg", ".png", ".bmp"]
-
 # 画像の一辺のサイズ (この大きさにリサイズされるので要確認)
 cellSize = 224
 
@@ -28,6 +25,9 @@ batchSize = 64
 
 # 学習時のサンプルを学習：検証データに分ける学習側の割合
 splitRateTrain = 0.8
+
+# 読み込み対象の画像拡張子
+img_ext = [".jpg", ".jpeg", ".png", ".bmp"]
 
 # データ変換
 transforms_train = T.Compose([

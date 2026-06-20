@@ -18,20 +18,18 @@ log_dir = pathlib.Path("_log_" + id_str)
 log_dir.mkdir(exist_ok = True) # モデルの保存用のフォルダ
 disp_score_t = ""
 
-datasets_raw = ld.ImageFolder_directory(dataset_path) # データの読み込み
+paths, labels, class_to_idx = ld.list_dataset(dataset_path)
 
 # 学習・検証データを分割
-train_data_size = int(cf.splitRateTrain * len(datasets_raw)) # 学習サンプルのサイズ
-val_data_size = len(datasets_raw) - train_data_size # 検証サンプルのサイズ
-
-indices = torch.randperm(len(datasets_raw)).tolist() # インデックスをランダムシャッフルしたリスト
+indices = torch.randperm(len(paths)).tolist() # インデックスをランダムシャッフルしたリスト
+train_data_size = int(cf.splitRateTrain * len(paths)) # 学習サンプルのサイズ
 train_idx, val_idx = indices[:train_data_size], indices[train_data_size:] # 各インデックス
-train_dataset = Subset(datasets_raw, train_idx) # 学習用データセット
-val_dataset = Subset(datasets_raw, val_idx) # 検証用データセット
-train_dataset.dataset.transform = cf.transforms_train # 学習用transformsを学習用データセットに適用
-val_dataset.dataset.transform = cf.transforms_eval # 検証用transformsを検証用データセットに適用
-print(datasets_raw.class_to_idx)
-print(len(datasets_raw), train_data_size, val_data_size)
+
+train_dataset = ld.ImageFolder_directory(paths, labels, train_idx, cf.transforms_train, class_to_idx)
+val_dataset = ld.ImageFolder_directory(paths, labels, val_idx, cf.transforms_eval, class_to_idx)
+
+print(train_dataset.class_to_idx)
+print(len(paths), train_data_size, len(val_idx))
 
 train_loader = DataLoader(train_dataset, batch_size = cf.batchSize, num_workers = os.cpu_count(), shuffle = True)
 val_loader = DataLoader(val_dataset, batch_size = cf.batchSize, num_workers = os.cpu_count())
@@ -72,7 +70,7 @@ def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoc
             disp_score_t = f"{epoch + 1:03} / {max_epoch:03} [ {n + 1:04} / {len(data_loader):04} ] l: {total_loss / (n + 1):.05f} a: {total_acc / counter:.03f}"
             print(f"\r {disp_score_t}", end = "")
         else: 
-            print(f"\r {disp_score_t} l: {total_loss / (n + 1):.05f} a: {total_acc / counter:.03f}", end = "")
+            print(f"\r {disp_score_t} vl: {total_loss / (n + 1):.05f} va: {total_acc / counter:.03f}", end = "")
 
     # if is_val == False: rate_scheduler.step() # 学習率の変更
 

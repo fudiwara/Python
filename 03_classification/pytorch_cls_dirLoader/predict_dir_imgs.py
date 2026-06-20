@@ -16,8 +16,7 @@ model = cf.build_model("eval").to(DEVICE)
 model.load_state_dict(torch.load(model_path, map_location = DEVICE, weights_only = False))
 model.eval()
 
-IMG_EXTS = [".jpg", ".jpeg", ".png", ".bmp"] # 処理対象の拡張子
-img_paths = sorted([p for p in image_dir_path.iterdir() if p.suffix.lower() in IMG_EXTS])
+img_paths = sorted([p for p in image_dir_path.iterdir() if p.suffix.lower() in cf.img_ext])
 for i in range(len(img_paths)):
     image_path = img_paths[i]
     img = cv.cvtColor(cv.imread(image_path), cv.COLOR_BGR2RGB)

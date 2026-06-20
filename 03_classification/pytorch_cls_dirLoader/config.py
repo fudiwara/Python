@@ -20,6 +20,8 @@ batchSize = 64
 # 学習時のサンプルを学習：検証データに分ける学習側の割合
 splitRateTrain = 0.8
 
+img_ext = [".jpg", ".jpeg", ".png", ".bmp"]  # 処理対象の拡張子
+
 # データ変換
 transforms_train = T.Compose([
     T.ToImage(), # テンソル変換の前にPIL画像に変換

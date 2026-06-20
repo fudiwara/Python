@@ -40,7 +40,7 @@ class ImageFolder_reg2(Dataset):
         return img, out_val_0, out_val_1
 
     def __len__(self): # ディレクトリ内の画像ファイルの数
-        return len(self.img_paths)
+        return len(self.indices)
 
 if __name__ == "__main__":
     import time, pathlib

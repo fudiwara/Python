@@ -3,6 +3,7 @@ sys.dont_write_bytecode = True
 import torch
 from torchvision.transforms import v2 as T
 import timm
+import numpy as np
 
 # ファイル名の _ で区切られる数がいくつあるか
 sep_num = 4

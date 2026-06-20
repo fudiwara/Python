@@ -1,8 +1,10 @@
 import sys, time, os, pathlib
 sys.dont_write_bytecode = True
+
 import torch
 import torchvision
 from torch.utils.data import DataLoader
+import numpy as np
 
 import config as cf
 import load_dataset_addInfo as ld
@@ -31,7 +33,7 @@ val_loader = DataLoader(ld.ImageFolder_reg2(paths, labels_0, labels_1, val_idx, 
 model = cf.build_model("train").to(DEVICE)
 criterion_age = torch.nn.L1Loss()
 criterion_gender = torch.nn.CrossEntropyLoss()
-loss_weights_age, loss_weights_gender = 0.1, 1.0
+loss_weights_0, loss_weights_1 = 1.0, 1.0 # 損失関数用の重み
 calc_acc = torch.nn.L1Loss()
 calc_acc_age = torch.nn.L1Loss()
 optimizer = torch.optim.AdamW(model.parameters(), lr = 0.0001)
@@ -48,9 +50,6 @@ def Train_Eval(model,optimizer,data_loader,device,epoch,max_epoch,is_val = False
         data = data.to(device)
         lbl_0 = lbl_0.to(device)
         lbl_1 = lbl_1.to(device)
-
-        y_true_all.append(lbl_0.detach().cpu().view(-1).numpy())
-        y_pred_all.append(out0.detach().cpu().view(-1).numpy())
         
         if is_val:
             with torch.no_grad():
@@ -58,14 +57,17 @@ def Train_Eval(model,optimizer,data_loader,device,epoch,max_epoch,is_val = False
         else:
             out0, out1 = model(data)
 
+        y_true_all.append(lbl_0.detach().cpu().view(-1).numpy())
+        y_pred_all.append(out0.detach().cpu().view(-1).numpy())
+
         loss0 = criterion_age(out0, lbl_0)
         loss1 = criterion_gender(out1, lbl_1)
-        loss = loss0 * loss_weights_age + loss1 * loss_weights_gender
-        total_loss += loss0.item() * loss_weights_age + loss1.item() * loss_weights_gender
+        loss = loss0 * loss_weights_0 + loss1 * loss_weights_1
+        total_loss += loss0.item() * loss_weights_0 + loss1.item() * loss_weights_1
 
         acc0 = calc_acc(out0, lbl_0)
         pred1 = out1.argmax(dim=1) # [B]
-        acc1 = (pred1 == lbl_1).float().mean()  # 性別accuracy(0~1)
+        acc1 = (pred1 == lbl_1).float().mean() # accuracy (0~1)
 
         total_acc_0 += acc0.item()
         total_acc_1 += acc1.item()

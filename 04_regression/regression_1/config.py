@@ -1,7 +1,7 @@
 import sys
 sys.dont_write_bytecode = True
+import numpy as np
 import torch
-import torch.nn as nn
 from torchvision.transforms import v2 as T
 import timm
 
@@ -51,8 +51,22 @@ transforms_eval = T.Compose([
     T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
+def calc_reg_metrics(y_true, y_pred):
+    err = y_true - y_pred
+    mae = np.mean(np.abs(err)) * val_rate
+    rmse = np.sqrt(np.mean(err ** 2)) * val_rate
 
-class build_model(nn.Module):
+    ss_res = np.sum(err ** 2)
+    ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+    r2 = 1.0 - (ss_res / ss_tot) if ss_tot > 0 else 0.0
+
+    if np.std(y_true) == 0 or np.std(y_pred) == 0:
+        corr = 0.0 # 定数配列だと相関はNaNになる
+    else:
+        corr = np.corrcoef(y_true, y_pred)[0, 1]
+    return mae, rmse, r2, corr
+
+class build_model(torch.nn.Module):
     def __init__(self, sw_train_eval):
         super().__init__()
         pretrained = (sw_train_eval == "train")
@@ -64,7 +78,7 @@ class build_model(nn.Module):
         )
         # in_features = self.model.num_features # モデルの出力の次元数
         in_features = self.model.head_hidden_size # モデルの出力の次元数
-        self.head = nn.Linear(in_features, 1) # 一つの出力となる回帰ヘッド
+        self.head = torch.nn.Linear(in_features, 1) # 一つの出力となる回帰ヘッド
 
     def forward(self, input):
         features = self.model(input)

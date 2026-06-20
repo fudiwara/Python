@@ -29,20 +29,25 @@ for i, (data, label) in enumerate(test_loader):
     with torch.no_grad(): # 推定のために勾配計算の無効化モードで
         outputs = model(data)
     
-    out_view = outputs.view(-1, outputs.shape[0])
-    out_view = out_view.squeeze()
-    pred = out_view.detach().cpu().tolist()
-    label_list += label
+    pred = outputs.detach().cpu().view(-1).tolist()
+    gt = label.detach().cpu().view(-1).tolist()
+
+    label_list += gt
     pred_list += pred
 
     print(f"\r dataset loading: {i + 1} / {len(test_loader)}", end="", flush=True)
 print()
 
-val_gt_list = np.array(label_list) * cf.val_rate
-val_gt_list = val_gt_list.reshape(-1)
-val_es_list = np.array(pred_list) * cf.val_rate
+y_true = np.array(label_list).reshape(-1)
+y_pred = np.array(pred_list).reshape(-1)
 
-val_abs_dist = []
+val_gt_list = y_true * cf.val_rate
+val_es_list = y_pred * cf.val_rate
+dist_list = val_gt_list - val_es_list
+val_abs_dist = np.abs(dist_list)
+
+mae, rmse, r2, corr = cf.calc_reg_metrics(y_true, y_pred)
+
 f = open(f"_plot{pathlib.Path(model_path).stem}.csv", mode = "w")
 for i in range(len(label_list)):
     dist_age = val_gt_list[i] - val_es_list[i]
@@ -59,3 +64,4 @@ print(np.mean(val_abs_dist), np.var(val_abs_dist), np.min(val_abs_dist), np.max(
 
 cor = np.corrcoef(val_gt_list, val_es_list)
 print(cor[0, 1])
+print(corr)

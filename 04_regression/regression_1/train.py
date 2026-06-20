@@ -1,5 +1,6 @@
 import sys, time, os, pathlib
 sys.dont_write_bytecode = True
+import numpy as np
 import torch
 import torchvision
 from torch.utils.data import DataLoader
@@ -36,20 +37,6 @@ model = cf.build_model("train").to(DEVICE)
 criterion = torch.nn.L1Loss() # 外れ値が少ないような対象なら MSELoss もよい
 optimizer = torch.optim.AdamW(model.parameters(), lr = 0.0001)
 
-def _calc_reg_metrics(y_true, y_pred):
-    err = y_true - y_pred
-    mae = np.mean(np.abs(err)) * cf.val_rate
-    rmse = np.sqrt(np.mean(err ** 2)) * cf.val_rate
-
-    ss_res = np.sum(err ** 2)
-    ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
-    r2 = 1.0 - (ss_res / ss_tot) if ss_tot > 0 else 0.0
-
-    if np.std(y_true) == 0 or np.std(y_pred) == 0:
-        corr = 0.0 # 定数配列だと相関はNaNになる
-    else:
-        corr = np.corrcoef(y_true, y_pred)[0, 1]
-    return mae, rmse, r2, corr
 
 def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoch, is_val = False):
     total_loss = 0.0
@@ -92,7 +79,7 @@ def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoc
 
     y_true_all = np.concatenate(y_true_all)
     y_pred_all = np.concatenate(y_pred_all)
-    mae, rmse, r2, corr = _calc_reg_metrics(y_true_all, y_pred_all)
+    mae, rmse, r2, corr = cf.calc_reg_metrics(y_true_all, y_pred_all)
 
     return avg_loss, mae, rmse, r2, corr
 

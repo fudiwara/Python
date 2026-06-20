@@ -62,7 +62,7 @@ class build_model(torch.nn.Module):
             num_classes = 0
         )
         # in_features = self.model.num_features # モデルの出力の次元数: EfficientNet等の場合
-        in_features = self.model.head_hidden_size # モデルの出力の次元数: MobileNetV3の場合
+        in_features = self.model.head_hidden_size # モデルの出力の次元数: MobileNetV3等の場合
         self.head = torch.nn.Linear(in_features, 1) # 一つの出力となる回帰ヘッド
 
     def forward(self, input):
@@ -70,10 +70,10 @@ class build_model(torch.nn.Module):
         x = self.head(features) # 出力特徴量から回帰で数値予測
         return x
 
-def calc_reg_metrics(y_true, y_pred): # 評価値計算
+def calc_reg_metrics(y_true, y_pred, rate_val): # 評価値計算
     err = y_true - y_pred
-    mae = np.mean(np.abs(err)) * val_rate
-    rmse = np.sqrt(np.mean(err ** 2)) * val_rate
+    mae = np.mean(np.abs(err)) * rate_val
+    rmse = np.sqrt(np.mean(err ** 2)) * rate_val
 
     ss_res = np.sum(err ** 2)
     ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)

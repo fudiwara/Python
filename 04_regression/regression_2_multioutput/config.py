@@ -1,7 +1,6 @@
 import sys
 sys.dont_write_bytecode = True
 import torch
-import torch.nn as nn
 from torchvision.transforms import v2 as T
 import timm
 
@@ -15,9 +14,6 @@ sep_val_1 = 1
 # 学習時の値に正規化するための係数
 val_rate_0 = 150
 
-# 読み込み対象の画像拡張子
-ext = [".jpg", ".jpeg", ".png", ".bmp"]
-
 # 画像の一辺のサイズ (この大きさにリサイズされるので要確認)
 cellSize = 224
 
@@ -29,6 +25,9 @@ batchSize = 64
 
 # 学習時のサンプルを学習：検証データに分ける学習側の割合
 splitRateTrain = 0.8
+
+# 読み込み対象の画像拡張子
+img_ext = [".jpg", ".jpeg", ".png", ".bmp"]
 
 # データ変換
 transforms_train = T.Compose([
@@ -52,23 +51,24 @@ transforms_eval = T.Compose([
     T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-class build_model(nn.Module):
+class build_model(torch.nn.Module):
     def __init__(self, sw_train_eval):
         super().__init__()
         pretrained = (sw_train_eval == "train")
         
         self.body = timm.create_model(
-            "efficientnet_b0",
+            "mobilenetv3_large_100.ra_in1k", # 実際に使う場合はEfficientNetV2等も検討すること
             pretrained = pretrained,
             num_classes = 0 # 最後の全結合層を削除して特徴両ベクトルを出力
         )
-        in_features = self.body.num_features # モデルの出力の次元数
+        # in_features = self.body.num_features # モデルの出力の次元数: EfficientNet等の場合
+        in_features = self.body.head_hidden_size # モデルの出力の次元数: MobileNetV3等の場合
 
-        self.bn = nn.BatchNorm1d(in_features)
-        self.dropout = nn.Dropout(0.5)
+        self.bn = torch.nn.BatchNorm1d(in_features)
+        self.dropout = torch.nn.Dropout(0.5)
         
-        self.head_age = nn.Linear(in_features, 1) # 一つの出力となる年齢予測用の回帰ヘッド
-        self.head_gender = nn.Linear(in_features, 2) # 2つの出力にした性別予測用の分類ヘッド
+        self.head_age = torch.nn.Linear(in_features, 1) # 一つの出力となる年齢予測用の回帰ヘッド
+        self.head_gender = torch.nn.Linear(in_features, 2) # 2つの出力にした性別予測用の分類ヘッド
 
     def forward(self, input):
         features = self.body(input)
@@ -77,6 +77,21 @@ class build_model(nn.Module):
         out_age = self.head_age(features).squeeze(1) # 出力特徴量から年齢予測 [batchSize]
         out_gender = self.head_gender(features) # 出力特徴量から性別予測 [batchSize, 2]
         return out_age, out_gender
+
+def calc_reg_metrics(y_true, y_pred, rate_val): # 評価値計算
+    err = y_true - y_pred
+    mae = np.mean(np.abs(err)) * rate_val
+    rmse = np.sqrt(np.mean(err ** 2)) * rate_val
+
+    ss_res = np.sum(err ** 2)
+    ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+    r2 = 1.0 - (ss_res / ss_tot) if ss_tot > 0 else 0.0
+
+    if np.std(y_true) == 0 or np.std(y_pred) == 0:
+        corr = 0.0 # 定数配列だと相関はNaNになる
+    else:
+        corr = np.corrcoef(y_true, y_pred)[0, 1]
+    return mae, rmse, r2, corr # 平均絶対誤差、二乗平均平方根誤差、決定係数、相関係数
 
 if __name__ == "__main__":
     import os

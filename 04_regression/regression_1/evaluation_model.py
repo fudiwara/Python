@@ -46,11 +46,8 @@ val_es_list = y_pred * cf.val_rate
 dist_list = val_gt_list - val_es_list
 val_abs_dist = np.abs(dist_list)
 
-mae, rmse, r2, corr = cf.calc_reg_metrics(y_true, y_pred)
-
 f = open(f"_plot{pathlib.Path(model_path).stem}.csv", mode = "w")
 for i in range(len(label_list)):
-
     print(f"{val_gt_list[i]},{val_es_list[i]},{dist_list[i]}", file = f)
 f.close()
 
@@ -60,5 +57,6 @@ print(np.mean(val_gt_list), np.var(val_gt_list), np.min(val_gt_list), np.max(val
 print(np.mean(val_es_list), np.var(val_es_list), np.min(val_es_list), np.max(val_es_list))
 print(np.mean(val_abs_dist), np.var(val_abs_dist), np.min(val_abs_dist), np.max(val_abs_dist))
 
+mae, rmse, r2, corr = cf.calc_reg_metrics(y_true, y_pred, cf.val_rate)
 print("MAE, RMSE, R2, CORR")
 print(f"{mae}, {rmse}, {r2}, {corr}")

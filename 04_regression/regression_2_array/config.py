@@ -64,7 +64,7 @@ class build_model(torch.nn.Module):
             num_classes = 0
         )
         # in_features = self.model.num_features # モデルの出力の次元数: EfficientNet等の場合
-        in_features = self.model.head_hidden_size # モデルの出力の次元数: MobileNetV3の場合
+        in_features = self.model.head_hidden_size # モデルの出力の次元数: MobileNetV3等の場合
         self.head = torch.nn.Linear(in_features, 2) # 2つの出力の回帰
 
     def forward(self, input):

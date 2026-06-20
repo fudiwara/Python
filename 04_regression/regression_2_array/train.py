@@ -26,7 +26,7 @@ train_idx, val_idx = indices[:train_data_size], indices[train_data_size:] # 各�
 print(len(paths), train_data_size, len(val_idx))
 
 train_loader = DataLoader(ld.ImageFolder_reg2(paths, labels_0, labels_1, train_idx, cf.transforms_train), batch_size = cf.batchSize, num_workers = os.cpu_count(), pin_memory=True, drop_last=True, shuffle = True)
-val_loader = DataLoader(ld.ImageFolder_reg2(paths, labels_0, labels_1, val_idx, cf.transforms_train), batch_size = cf.batchSize, num_workers = os.cpu_count(), pin_memory=True, drop_last=True)
+val_loader = DataLoader(ld.ImageFolder_reg2(paths, labels_0, labels_1, val_idx, cf.transforms_eval), batch_size = cf.batchSize, num_workers = os.cpu_count(), pin_memory=True, drop_last=True)
 
 # モデル、損失関数、最適化関数、収束率の定義
 model = cf.build_model("train").to(DEVICE)
@@ -85,7 +85,8 @@ def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoc
     return avg_loss, avg_acc, mae, rmse, r2, corr # rmse: 外れ値悪化確認用、r2: 分散量の確認、 corr: 相関係数の確認
 
 best_loss = None
-with open(path_log, mode = "w") as f: print("train_loss,val_loss,train_acc,val_acc,train_mae,train_rmse,train_r2,train_corr,val_mae,val_rmse,val_r2,val_corr", file = f)
+with open(path_log, mode = "w") as f:
+    print("train_loss,val_loss,train_acc,val_acc,train_mae,train_rmse,train_r2,train_corr,val_mae,val_rmse,val_r2,val_corr", file = f)
 s_tm = time.time()
 
 for epoch in range(cf.epochSize):
@@ -96,7 +97,7 @@ for epoch in range(cf.epochSize):
 
     if best_loss is None or val_loss < best_loss: # lossを更新したときのみ保存
         best_loss = val_loss
-        torch.save(model.state_dict(), log_dir / f"best.pth") # モデルの保存
+        torch.save(model.state_dict(), log_dir / "best.pth") # モデルの保存
 
     # 学習の状況をCSVに保存
     with open(path_log, mode = "a") as f: print(f"{train_loss},{val_loss},{train_acc},{val_acc},{train_mae},{train_rmse},{train_r2},{train_corr},{val_mae},{val_rmse},{val_r2},{val_corr}", file = f)

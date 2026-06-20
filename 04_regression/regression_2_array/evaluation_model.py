@@ -50,29 +50,27 @@ val_a_es_list = np.array(pred_list_0)
 val_b_gt_list = np.array(label_list_1)
 val_b_es_list = np.array(pred_list_1)
 
-val_a_abs_dist, val_b_abs_dist = [], []
+dist_a_list = val_a_gt_list - val_a_es_list
+val_a_abs_dist = np.abs(dist_a_list)
+dist_b_list = val_b_gt_list - val_b_es_list
+val_b_abs_dist = np.abs(dist_b_list)
+
 f = open("_plot_rn.csv", mode = "w")
 for i in range(len(label_list_0)):
-    dist_a = val_a_gt_list[i] - val_a_es_list[i]
-    dist_b = val_b_gt_list[i] - val_b_es_list[i]
-    val_a_abs_dist.append(abs(dist_a))
-    val_b_abs_dist.append(abs(dist_b))
-
-    f.write(f"{val_a_gt_list[i]},{val_a_es_list[i]},{dist_a},{val_b_gt_list[i]},{val_b_es_list[i]},{dist_b}\n")
+    print(f"{val_a_gt_list[i]},{val_a_es_list[i]},{dist_a_list[i]},{val_b_gt_list[i]},{val_b_es_list[i]},{dist_b_list[i]}", file = f)
 f.close()
-
-val_a_abs_dist = np.array(val_a_abs_dist)
-val_b_abs_dist = np.array(val_b_abs_dist)
 
 print(np.mean(val_a_gt_list), np.var(val_a_gt_list), np.min(val_a_gt_list), np.max(val_a_gt_list))
 print(np.mean(val_a_es_list), np.var(val_a_es_list), np.min(val_a_es_list), np.max(val_a_es_list))
 print(np.mean(val_a_abs_dist), np.var(val_a_abs_dist), np.min(val_a_abs_dist), np.max(val_a_abs_dist))
-cor_a = np.corrcoef(val_a_gt_list, val_a_es_list)
-print(cor_a[0, 1])
+mae, rmse, r2, corr = cf.calc_reg_metrics(val_a_gt_list, val_a_es_list, cf.val_rate_0)
+print("MAE, RMSE, R2, CORR")
+print(f"{mae}, {rmse}, {r2}, {corr}")
 
 print("---")
 print(np.mean(val_b_gt_list), np.var(val_b_gt_list), np.min(val_b_gt_list), np.max(val_b_gt_list))
 print(np.mean(val_b_es_list), np.var(val_b_es_list), np.min(val_b_es_list), np.max(val_b_es_list))
 print(np.mean(val_b_abs_dist), np.var(val_b_abs_dist), np.min(val_b_abs_dist), np.max(val_b_abs_dist))
-cor_b = np.corrcoef(val_b_gt_list, val_b_es_list)
-print(cor_b[0, 1])
+mae, rmse, r2, corr = cf.calc_reg_metrics(val_b_gt_list, val_b_es_list, cf.val_rate_1)
+print("MAE, RMSE, R2, CORR")
+print(f"{mae}, {rmse}, {r2}, {corr}")

@@ -2,7 +2,6 @@ import sys
 sys.dont_write_bytecode = True
 
 import torch
-import torchvision.transforms as T
 from torch.utils.data import Dataset, DataLoader
 import cv2 as cv
 

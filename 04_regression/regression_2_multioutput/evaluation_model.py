@@ -20,7 +20,8 @@ model.load_state_dict(torch.load(model_path, map_location = DEVICE, weights_only
 model.eval()
 
 # データの読み込み (バッチサイズは適宜変更する)
-test_data = ld.ImageFolder_reg2(dataset_path, cf.transforms_eval) # データの読み込み
+paths, labels_0, labels_1 = ld.list_dataset(dataset_path)
+test_data = ld.ImageFolder_reg2(paths, labels_0, labels_1, list(range(len(paths))), cf.transforms_eval) # データの読み込み
 test_loader = DataLoader(test_data, batch_size = bs, num_workers = os.cpu_count())
 
 label_list_0, pred_list_0, label_list_1, pred_list_1 = [], [], [], []
@@ -44,22 +45,18 @@ print()
 val_a_gt_list = np.array(label_list_0) * cf.val_rate_0
 val_a_es_list = np.array(pred_list_0) * cf.val_rate_0
 
-val_a_abs_dist = []
+val_a_abs_dist = np.abs(val_a_gt_list - val_a_es_list)
 f = open(f"_plot{pathlib.Path(model_path).stem}.csv", mode = "w")
 for i in range(len(label_list_0)):
-    dist_a = val_a_gt_list[i] - val_a_es_list[i]
-    val_a_abs_dist.append(abs(dist_a))
-
-    f.write(f"{val_a_gt_list[i]},{val_a_es_list[i]},{dist_a}\n")
+    print(f"{val_a_gt_list[i]},{val_a_es_list[i]},{val_a_abs_dist[i]}", file = f)
 f.close()
-
-val_a_abs_dist = np.array(val_a_abs_dist)
 
 print(np.mean(val_a_gt_list), np.var(val_a_gt_list), np.min(val_a_gt_list), np.max(val_a_gt_list))
 print(np.mean(val_a_es_list), np.var(val_a_es_list), np.min(val_a_es_list), np.max(val_a_es_list))
 print(np.mean(val_a_abs_dist), np.var(val_a_abs_dist), np.min(val_a_abs_dist), np.max(val_a_abs_dist))
-cor = np.corrcoef(val_a_gt_list, val_a_es_list)
-print(cor[0, 1])
+mae, rmse, r2, corr = cf.calc_reg_metrics(val_a_gt_list, val_a_es_list, cf.val_rate_0)
+print("MAE, RMSE, R2, CORR")
+print(f"{mae}, {rmse}, {r2}, {corr}")
 
 print("---")
 print(accuracy_score(label_list_1, pred_list_1)) # 正解率

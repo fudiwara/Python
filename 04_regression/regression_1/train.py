@@ -78,7 +78,7 @@ def Train_Eval(model, criterion, optimizer, data_loader, device, epoch, max_epoc
 
     y_true_all = np.concatenate(y_true_all)
     y_pred_all = np.concatenate(y_pred_all)
-    mae, rmse, r2, corr = cf.calc_reg_metrics(y_true_all, y_pred_all)
+    mae, rmse, r2, corr = cf.calc_reg_metrics(y_true_all, y_pred_all, cf.val_rate)
 
     return avg_loss, mae, rmse, r2, corr # rmse: 外れ値悪化確認用、r2: 分散量の確認、 corr: 相関係数の確認
 

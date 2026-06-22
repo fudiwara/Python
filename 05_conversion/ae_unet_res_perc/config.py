@@ -4,14 +4,14 @@ sys.dont_write_bytecode = True
 import torch
 import torch.nn as nn
 
-# 画像の一辺サイズ（192 -> 256）
-cellSize = 256
+# 画像の一辺サイズ
+cellSize = 192
 
 # 学習epoch
-epochSize = 150
+epochSize = 100
 
 # ミニバッチ
-batchSize = 16
+batchSize = 32
 
 # データセット数（load_dataset.py で設定）
 dataset_size = 0
@@ -86,7 +86,7 @@ class UpBlock(nn.Module):
 
 class GeneratorAE(nn.Module):
     """
-    1ch(gray) -> 3ch(color), 出力は[-1, 1]
+    1ch(L) -> 2ch(ab), 出力は[-1, 1]
     """
     def __init__(self, base_ch=32, norm="in", n_res=1):
         super().__init__()
@@ -109,8 +109,9 @@ class GeneratorAE(nn.Module):
         self.d2 = UpBlock(c * 4, c * 2, c * 2, norm=norm, n_res=n_res)
         self.d1 = UpBlock(c * 2, c, c, norm=norm, n_res=n_res)
 
+        # 変更点: 3ch RGBではなく2ch abを出力
         self.out = nn.Sequential(
-            nn.Conv2d(c + c, 3, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(c + c, 2, kernel_size=3, stride=1, padding=1),
             nn.Tanh()
         )
 

@@ -11,7 +11,7 @@ cellSize = 192
 epochSize = 100
 
 # ミニバッチ
-batchSize = 32
+batchSize = 40
 
 # データセット数（load_dataset.py で設定）
 dataset_size = 0
@@ -88,7 +88,7 @@ class GeneratorAE(nn.Module):
     """
     1ch(L) -> 2ch(ab), 出力は[-1, 1]
     """
-    def __init__(self, base_ch=32, norm="in", n_res=1):
+    def __init__(self, base_ch=48, norm="in", n_res=1):
         super().__init__()
         c = base_ch
 

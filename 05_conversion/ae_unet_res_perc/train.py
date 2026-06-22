@@ -26,17 +26,19 @@ model = cf.GeneratorAE().to(DEVICE)
 model = nn.DataParallel(model)
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=1.5e-4, betas=(0.9, 0.999), weight_decay=1e-4)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+    optimizer,
+    T_max=cf.epochSize,
+    eta_min=5.0e-6
+)
+
 l1_loss = nn.L1Loss()
 
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max=cf.epochSize,eta_min=1.0e-6)
-
-# perceptual loss (VGG16 features)
 vgg = models.vgg16(weights=models.VGG16_Weights.DEFAULT).features[:16].to(DEVICE).eval()
 for p in vgg.parameters():
     p.requires_grad = False
 
 def perceptual_loss(pred, target):
-    # pred/target: [-1,1] -> [0,1]
     p = (pred + 1.0) * 0.5
     t = (target + 1.0) * 0.5
     fp = vgg(p)
@@ -50,8 +52,9 @@ s_tm = time.time()
 with open(path_log, mode="w") as f:
     print("loss_total,loss_l1,loss_perc,lr", file=f)
 
-lambda_l1 = 100.0
-lambda_perc = 10.0
+# 最小変更: perceptual寄りに調整
+lambda_l1 = 50.0
+lambda_perc = 20.0
 
 for i in range(cf.epochSize):
     model.train()
@@ -59,8 +62,8 @@ for i in range(cf.epochSize):
     n_tm = time.time()
 
     for n, (real_target, imgs_src) in enumerate(dataset):
-        real_target = real_target.to(DEVICE)  # 3ch
-        imgs_src = imgs_src.to(DEVICE)        # 1ch
+        real_target = real_target.to(DEVICE)
+        imgs_src = imgs_src.to(DEVICE)
 
         fake_target = model(imgs_src)
 
@@ -91,13 +94,12 @@ for i in range(cf.epochSize):
 
     print(
         f"\r {i+1:03}/{cf.epochSize:03} [{n+1:04}/{itr_size:04}] "
-        f"L:{m_total:.04f} L1:{m_l1:.04f} P:{m_perc:.04f} {time.time()-n_tm:.01f}s"
+        f"L:{m_total:.04f} L1:{m_l1:.04f} P:{m_perc:.04f} lr:{current_lr:.7f} {time.time()-n_tm:.01f}s"
     )
 
     with open(path_log, mode="a") as f:
         print(f"{m_total},{m_l1},{m_perc},{current_lr}", file=f)
 
-    # サンプル保存（fake / real）
     b = min(real_target.shape[0], 32)
     save_imgs = torch.cat([fake_target[:b], real_target[:b]], dim=0)
     torchvision.utils.save_image(

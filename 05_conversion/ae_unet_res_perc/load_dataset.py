@@ -3,7 +3,6 @@ sys.dont_write_bytecode = True
 import pathlib
 from PIL import Image
 
-import torch
 import torchvision.transforms as T
 from torch.utils.data import Dataset, DataLoader
 
@@ -20,7 +19,7 @@ class ImageFolderAE(Dataset):
     def __getitem__(self, idx):
         path = self.img_paths[idx]
         img = Image.open(path).convert("RGB")
-        color, gray = self.transform(img)  # color:3ch, gray:1ch
+        color, gray = self.transform(img)
         return color, gray
 
     def _get_img_paths(self, imgs_dir):
@@ -48,17 +47,17 @@ class MultiInputWrapper(object):
         return [self.base_func(x) for x in xs]
 
 
+# 最小変更: Rotationを外して対応関係を崩しにくく
 data_transforms = T.Compose([
     T.Resize(int(cf.cellSize * 1.2)),
-    T.RandomRotation(degrees=15),
-    T.RandomApply([T.GaussianBlur(5, sigma=(0.1, 5.0))], p=0.5),
+    T.RandomApply([T.GaussianBlur(5, sigma=(0.1, 3.0))], p=0.3),
     T.RandomHorizontalFlip(0.5),
     T.CenterCrop(cf.cellSize),
     ColorAndGray(),
     MultiInputWrapper(T.ToTensor()),
     MultiInputWrapper([
-        T.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),  # color -> [-1,1]
-        T.Normalize(mean=(0.5,), std=(0.5,))                     # gray  -> [-1,1]
+        T.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
+        T.Normalize(mean=(0.5,), std=(0.5,))
     ])
 ])
 

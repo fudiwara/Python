@@ -4,8 +4,8 @@ sys.dont_write_bytecode = True
 import torch
 import torch.nn as nn
 
-# 画像の一辺サイズ
-cellSize = 192
+# 画像の一辺サイズ（192 -> 256）
+cellSize = 256
 
 # 学習epoch
 epochSize = 150
@@ -76,7 +76,6 @@ class UpBlock(nn.Module):
 
     def forward(self, x, skip):
         x = self.up(x)
-        # サイズずれの保険
         if x.shape[-2:] != skip.shape[-2:]:
             x = nn.functional.interpolate(x, size=skip.shape[-2:], mode="bilinear", align_corners=False)
         x = torch.cat([x, skip], dim=1)
@@ -95,20 +94,20 @@ class GeneratorAE(nn.Module):
 
         self.stem = ConvNormAct(1, c, k=5, s=1, p=2, norm=norm, act="relu")
         self.e1 = nn.Sequential(ResBlock(c, norm=norm))
-        self.e2 = DownBlock(c, c * 2, norm=norm, n_res=n_res)      # 96
-        self.e3 = DownBlock(c * 2, c * 4, norm=norm, n_res=n_res)  # 48
-        self.e4 = DownBlock(c * 4, c * 8, norm=norm, n_res=n_res)  # 24
-        self.e5 = DownBlock(c * 8, c * 8, norm=norm, n_res=n_res)  # 12
+        self.e2 = DownBlock(c, c * 2, norm=norm, n_res=n_res)
+        self.e3 = DownBlock(c * 2, c * 4, norm=norm, n_res=n_res)
+        self.e4 = DownBlock(c * 4, c * 8, norm=norm, n_res=n_res)
+        self.e5 = DownBlock(c * 8, c * 8, norm=norm, n_res=n_res)
 
         self.bottleneck = nn.Sequential(
             ResBlock(c * 8, norm=norm),
             ResBlock(c * 8, norm=norm),
         )
 
-        self.d4 = UpBlock(c * 8, c * 8, c * 8, norm=norm, n_res=n_res)  # 24
-        self.d3 = UpBlock(c * 8, c * 4, c * 4, norm=norm, n_res=n_res)  # 48
-        self.d2 = UpBlock(c * 4, c * 2, c * 2, norm=norm, n_res=n_res)  # 96
-        self.d1 = UpBlock(c * 2, c, c, norm=norm, n_res=n_res)          # 192
+        self.d4 = UpBlock(c * 8, c * 8, c * 8, norm=norm, n_res=n_res)
+        self.d3 = UpBlock(c * 8, c * 4, c * 4, norm=norm, n_res=n_res)
+        self.d2 = UpBlock(c * 4, c * 2, c * 2, norm=norm, n_res=n_res)
+        self.d1 = UpBlock(c * 2, c, c, norm=norm, n_res=n_res)
 
         self.out = nn.Sequential(
             nn.Conv2d(c + c, 3, kernel_size=3, stride=1, padding=1),
@@ -116,12 +115,12 @@ class GeneratorAE(nn.Module):
         )
 
     def forward(self, x):
-        x0 = self.stem(x)   # c,192
-        x1 = self.e1(x0)    # c,192
-        x2 = self.e2(x1)    # 2c,96
-        x3 = self.e3(x2)    # 4c,48
-        x4 = self.e4(x3)    # 8c,24
-        x5 = self.e5(x4)    # 8c,12
+        x0 = self.stem(x)
+        x1 = self.e1(x0)
+        x2 = self.e2(x1)
+        x3 = self.e3(x2)
+        x4 = self.e4(x3)
+        x5 = self.e5(x4)
 
         b = self.bottleneck(x5)
 

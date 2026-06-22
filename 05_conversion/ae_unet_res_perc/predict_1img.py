@@ -42,14 +42,20 @@ gray_n = gray_f * 2.0 - 1.0                                 # [-1,1]
 data = torch.from_numpy(gray_n).unsqueeze(0).unsqueeze(0).to(DEVICE)  # 1,1,H,W
 
 with torch.no_grad():
-    output = model(data)  # [-1,1], 1,3,H,W
+    pred_ab = model(data)[0].detach().cpu().clamp(-1, 1)   # 2,H,W
 
-tmp = output[0].permute(1, 2, 0).detach().cpu().numpy()     # H,W,3
-tmp = ((tmp + 1.0) * 0.5 * 255.0).clip(0, 255).astype(np.uint8)
+# Lは入力時のgray_nから復元
+L_255 = ((gray_n + 1.0) * 0.5 * 255.0).astype(np.float32)  # H,W
+ab_255 = (pred_ab.permute(1, 2, 0).numpy() * 127.0 + 128.0).astype(np.float32)  # H,W,2
 
-img_bgr = cv.cvtColor(tmp, cv.COLOR_RGB2BGR)
-img_out = cv.resize(img_bgr, (i_w, i_h), interpolation=cv.INTER_LANCZOS4)
+lab = np.zeros((cf.cellSize, cf.cellSize, 3), dtype=np.float32)
+lab[:, :, 0] = L_255
+lab[:, :, 1:3] = ab_255
+lab = np.clip(lab, 0, 255).astype(np.uint8)
 
+rgb = cv.cvtColor(lab, cv.COLOR_LAB2RGB)                   # H,W,3
+img_out = cv.resize(rgb, (i_w, i_h), interpolation=cv.INTER_LANCZOS4)
+
+# OpenCVで保存するのでBGRに変換
 output_filename = file_name.stem + "_ae_gc.png"
-cv.imwrite(output_filename, img_out)
-print("saved:", output_filename)
+cv.imwrite(output_filename, cv.cvtColor(img_out, cv.COLOR_RGB2BGR))

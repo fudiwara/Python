@@ -68,16 +68,16 @@ class build_model(torch.nn.Module):
         self.bn = torch.nn.BatchNorm1d(in_features)
         self.dropout = torch.nn.Dropout(0.5)
         
-        self.head_age = torch.nn.Linear(in_features, 1) # 一つの出力となる年齢予測用の回帰ヘッド
-        self.head_gender = torch.nn.Linear(in_features, 2) # 2つの出力にした性別予測用の分類ヘッド
+        self.head_0 = torch.nn.Linear(in_features, 1) # 一つの出力となる年齢予測用の回帰ヘッド
+        self.head_1 = torch.nn.Linear(in_features, 2) # 2つの出力にした性別予測用の分類ヘッド
 
     def forward(self, input):
         features = self.body(input)
         features = self.bn(features)
         features = self.dropout(features)
-        out_age = self.head_age(features).squeeze(1) # 出力特徴量から年齢予測 [batchSize]
-        out_gender = self.head_gender(features) # 出力特徴量から性別予測 [batchSize, 2]
-        return out_age, out_gender
+        out_0 = self.head_0(features).squeeze(1) # 出力特徴量から年齢予測 [batchSize]
+        out_1 = self.head_1(features) # 出力特徴量から性別予測 [batchSize, 2]
+        return out_0, out_1
 
 def calc_reg_metrics(y_true, y_pred, rate_val): # 評価値計算
     err = y_true - y_pred

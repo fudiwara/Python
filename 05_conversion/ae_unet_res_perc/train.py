@@ -77,18 +77,21 @@ for i in range(cf.epochSize):
     # 可視化保存: L + pred_ab -> RGB
     with torch.no_grad():
         b = min(imgs_L.shape[0], 16)
-        L_vis = imgs_L[:b]
-        ab_vis = pred_ab[:b].clamp(-1, 1)
 
-        # Lab -> RGB(概算表示用)
+        # すべてCPUへ揃える
+        L_vis = imgs_L[:b].detach().cpu()                # [-1,1], Bx1xHxW
+        ab_vis = pred_ab[:b].detach().clamp(-1, 1).cpu() # [-1,1], Bx2xHxW
+
         # L: [-1,1] -> [0,255], ab: [-1,1] -> [0,255]
-        L_np = ((L_vis + 1.0) * 0.5 * 255.0).cpu()
-        ab_np = (ab_vis * 127.0 + 128.0).cpu()
-        lab = torch.cat([L_np, ab_np], dim=1)  # B,3,H,W
+        L_np = (L_vis + 1.0) * 0.5 * 255.0
+        ab_np = ab_vis * 127.0 + 128.0
+        lab = torch.cat([L_np, ab_np], dim=1)  # CPU tensor, Bx3xHxW
 
-        # save_image用に0-1相当へ簡易変換（見た目確認目的）
-        # 正確なLab->RGB変換はpredict側で実施
-        preview = torch.cat([L_vis.repeat(1, 3, 1, 1), torch.clamp((lab / 255.0) * 2.0 - 1.0, -1, 1)], dim=0)
+        # 左: 入力L(3ch化) / 右: Lab擬似表示
+        left = L_vis.repeat(1, 3, 1, 1)  # CPU
+        right = torch.clamp((lab / 255.0) * 2.0 - 1.0, -1, 1)  # CPU
+        preview = torch.cat([left, right], dim=0)  # CPU同士なのでOK
+
         torchvision.utils.save_image(
             preview,
             f"{log_dir}/_e_{i+1:03}.png",

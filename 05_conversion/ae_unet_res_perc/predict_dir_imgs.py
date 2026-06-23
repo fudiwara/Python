@@ -36,17 +36,18 @@ for file_name in file_list:
     img_rgb = img_rgb.resize((cf.cellSize, cf.cellSize), resample=Image.BICUBIC)
 
     rgb_np = np.array(img_rgb, dtype=np.uint8)
-    gray_np = cv.cvtColor(rgb_np, cv.COLOR_RGB2GRAY)
-    gray_f = gray_np.astype(np.float32) / 255.0
-    gray_n = gray_f * 2.0 - 1.0
+    lab_np = cv.cvtColor(rgb_np, cv.COLOR_RGB2LAB).astype(np.float32)
+    L_np = lab_np[:, :, 0]                                      # H,W
+    L_f = L_np / 255.0                                          # [0,1]
+    L_n = L_f * 2.0 - 1.0                                       # [-1,1]
 
-    data = torch.from_numpy(gray_n).unsqueeze(0).unsqueeze(0).to(DEVICE)  # 1,1,H,W
-    
+    data = torch.from_numpy(L_n).unsqueeze(0).unsqueeze(0).to(DEVICE)  # 1,1,H,W
+
     with torch.no_grad():
         pred_ab = model(data)[0].detach().cpu().clamp(-1, 1)   # 2,H,W
 
-    # Lは入力時のgray_nから復元
-    L_255 = ((gray_n + 1.0) * 0.5 * 255.0).astype(np.float32)  # H,W
+    # Lは入力時のL_nから復元
+    L_255 = ((L_n + 1.0) * 0.5 * 255.0).astype(np.float32)  # H,W
     ab_255 = (pred_ab.permute(1, 2, 0).numpy() * 127.0 + 128.0).astype(np.float32)  # H,W,2
 
     lab = np.zeros((cf.cellSize, cf.cellSize, 3), dtype=np.float32)

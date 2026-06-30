@@ -1,111 +1,131 @@
-import sys, time, os
+import sys, time, pathlib
 sys.dont_write_bytecode = True
-import numpy as np
 import statistics
 
 import torch
-from torch import nn
 import torchvision
-from itertools import chain
 
 import load_dataset as ld
 import config as cf
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+print(DEVICE)
 torch.backends.cudnn.benchmark = True
+
 id_str = sys.argv[1]
-id_str += f"_b{cf.batchSize}_i{cf.lambda_identity}_c{cf.lambda_cycle}"
-dataset_path_src = sys.argv[2]
-dataset_path_target = sys.argv[3]
+dataset_path_src = pathlib.Path(sys.argv[2])
+dataset_path_target = pathlib.Path(sys.argv[3])
 path_log = "_l_" + id_str + ".csv"
-log_dir = "_log_" + id_str
-if not os.path.exists(log_dir): os.mkdir(log_dir) # 画像保存用のフォルダ
+log_dir = pathlib.Path("_log_" + id_str)
+log_dir.mkdir(exist_ok=True, parents=True)
 
-model_G, model_D = cf.Generator(), cf.Discriminator()
-model_G, model_D = nn.DataParallel(model_G), nn.DataParallel(model_D)
-model_G, model_D = model_G.to(DEVICE), model_D.to(DEVICE)
+model_G, model_D = cf.Generator().to(DEVICE), cf.Discriminator().to(DEVICE)
 
-params_G = torch.optim.Adam(model_G.parameters(), lr=0.0002, betas=(0.5, 0.999))
-params_D = torch.optim.Adam(model_D.parameters(), lr=0.0002, betas=(0.5, 0.999))
+params_G = torch.optim.Adam(model_G.parameters(), lr=cf.lr_g, betas=(cf.beta1, cf.beta2))
+params_D = torch.optim.Adam(model_D.parameters(), lr=cf.lr_d, betas=(cf.beta1, cf.beta2))
 
-# ロスを計算するためのラベル変数 (PatchGAN)
-ones = torch.ones(cf.batchSize, 1, 3, 3).to(DEVICE)
-zeros = torch.zeros(cf.batchSize, 1, 3, 3).to(DEVICE)
+bce_loss = torch.nn.BCEWithLogitsLoss()
+mae_loss = torch.nn.L1Loss()
 
-# 損失関数
-bce_loss = nn.BCEWithLogitsLoss()
-mae_loss = nn.L1Loss()
+scaler_G = torch.amp.GradScaler("cuda", enabled=(cf.use_amp and DEVICE == "cuda"))
+scaler_D = torch.amp.GradScaler("cuda", enabled=(cf.use_amp and DEVICE == "cuda"))
 
-# 学習
 dataset = ld.load_datasets(dataset_path_src, dataset_path_target)
-itr_size = cf.dataset_size // cf.batchSize
+itr_size = max(1, cf.dataset_size // cf.batchSize)
+print(cf.dataset_size, itr_size)
 s_tm = time.time()
-with open(path_log, mode = "w") as f: print("gab_mse,gba_mse,gca_l1,gcb_l1,da_mse,db_mse", file = f) # 損失推移の記録用
+
+with open(path_log, mode="w") as f:
+    print("gl_mean,gl_bce,gl_l1,dl", file=f)
+
+best_score = 1e18
+best_epoch = -1
+
 for i in range(cf.epochSize):
+    model_G.train()
+    model_D.train()
+
     log_loss_G_sum, log_loss_G_bce, log_loss_G_mae, log_loss_D = [], [], [], []
     n_tm = time.time()
-    for n, (real_target, imgs_src) in enumerate(dataset):
-        batch_len = len(real_target)
-        real_target, imgs_src = real_target.to(DEVICE), imgs_src.to(DEVICE)
-        
-        fake_target = model_G(imgs_src) # Gの訓練: 偽のターゲットドメイン画像を作成
-        fake_target_tensor = fake_target.detach() # 偽画像を一時保存
 
-        # 偽画像を本物と騙せるようにロスを計算
-        LAMBD = 100.0 # BCEとMAEの係数
-        out = model_D(torch.cat([fake_target, imgs_src], dim=1))
-        loss_G_bce = bce_loss(out, ones[:batch_len])
-        loss_G_mae = LAMBD * mae_loss(fake_target, real_target)
-        loss_G_sum = loss_G_bce + loss_G_mae
+    for n, (real_target, imgs_src) in enumerate(dataset):
+        real_target = real_target.to(DEVICE, non_blocking=True)
+        imgs_src = imgs_src.to(DEVICE, non_blocking=True)
+
+        # 生成器の更新
+        params_G.zero_grad(set_to_none=True)
+        with torch.amp.autocast("cuda", enabled=(cf.use_amp and DEVICE == "cuda")):
+            fake_target = model_G(imgs_src)
+            out_fake_for_g = model_D(torch.cat([fake_target, imgs_src], dim=1))
+            ones_g = torch.ones_like(out_fake_for_g)
+            loss_G_bce = bce_loss(out_fake_for_g, ones_g)
+            loss_G_mae = cf.lambda_l1 * mae_loss(fake_target, real_target)
+            loss_G_sum = loss_G_bce + loss_G_mae
+
+        scaler_G.scale(loss_G_sum).backward()
+        scaler_G.step(params_G)
+        scaler_G.update()
+
+        # 識別器の更新
+        update_d = (n % cf.d_update_interval == 0)
+        if update_d:
+            params_D.zero_grad(set_to_none=True)
+            fake_det = fake_target.detach()
+
+            in_real = torch.cat([real_target, imgs_src], dim=1)
+            in_fake = torch.cat([fake_det, imgs_src], dim=1)
+
+            if cf.use_input_noise_for_d: # 学習安定化のため識別器の入力にノイズを加える
+                in_real = in_real + cf.input_noise_std * torch.randn_like(in_real)
+                in_fake = in_fake + cf.input_noise_std * torch.randn_like(in_fake)
+
+            with torch.amp.autocast("cuda", enabled=(cf.use_amp and DEVICE == "cuda")):
+                out_real = model_D(in_real)
+                out_fake = model_D(in_fake)
+
+                ones_d = torch.full_like(out_real, cf.real_label_smooth)
+                zeros_d = torch.zeros_like(out_fake)
+
+                loss_D_real = bce_loss(out_real, ones_d)
+                loss_D_fake = bce_loss(out_fake, zeros_d)
+                loss_D = 0.5 * (loss_D_real + loss_D_fake)
+
+            scaler_D.scale(loss_D).backward()
+            scaler_D.step(params_D)
+            scaler_D.update()
+        else:
+            loss_D = torch.zeros((), device=DEVICE)
 
         log_loss_G_bce.append(loss_G_bce.item())
         log_loss_G_mae.append(loss_G_mae.item())
         log_loss_G_sum.append(loss_G_sum.item())
-
-        # 微分計算・重み更新
-        params_D.zero_grad()
-        params_G.zero_grad()
-        loss_G_sum.backward()
-        params_G.step()
-
-        # Discriminatoの訓練: 本物のターゲットドメイン画像を本物と識別できるようにロスを計算
-        real_out = model_D(torch.cat([real_target, imgs_src], dim=1))
-        loss_D_real = bce_loss(real_out, ones[:batch_len])
-
-        # 偽の画像の偽と識別できるようにロスを計算
-        fake_out = model_D(torch.cat([fake_target_tensor, imgs_src], dim=1))
-        loss_D_fake = bce_loss(fake_out, zeros[:batch_len])
-
-        # 実画像と偽画像のロスを合計
-        loss_D = loss_D_real + loss_D_fake
         log_loss_D.append(loss_D.item())
 
-        # 微分計算・重み更新
-        params_D.zero_grad()
-        params_G.zero_grad()
-        loss_D.backward()
-        params_D.step()
-
-        print(f"\r {i + 1:03} / {cf.epochSize:03} [ {n + 1:04} / {itr_size:04} ] GL bce: {loss_G_bce.item():.04f} l1: {loss_G_mae.item():.04f} DL: {loss_D.item():.04f}", end = "")
-        # if n == 3: break
+        print(f"\r {i + 1:03}/{cf.epochSize:03} [{n + 1:04}/{itr_size:04}] GL_bce:{loss_G_bce.item():.4f} L1:{loss_G_mae.item():.4f} DL:{loss_D.item():.4f}", end = "")
 
     gl_mean = statistics.mean(log_loss_G_sum)
     gl_bce = statistics.mean(log_loss_G_bce)
     gl_l1 = statistics.mean(log_loss_G_mae)
     dl = statistics.mean(log_loss_D)
-    print(f"\r {i + 1:03} / {cf.epochSize:03} [ {n + 1:04} / {itr_size:04} ] GL bce: {gl_bce:.04f} l1: {gl_l1:.04f} DL: {dl:.04f} {time.time() - n_tm:.01f}s")
 
-    # 学習の状況をCSVに保存
-    with open(path_log, mode = "a") as f: print(f"{gl_mean},{gl_bce},{gl_l1},{dl}", file = f)
+    print(f"\r {i + 1:03}/{cf.epochSize:03} [{n + 1:04}/{itr_size:04}] GL_bce:{gl_bce:.4f} L1:{gl_l1:.4f} DL:{dl:.4f} {time.time() - n_tm:.1f}s")
 
-    # Gでの生成画像例とソース画像を連結してから保存
-    buf_save_imgs = torch.cat([fake_target_tensor[:min(batch_len, 32)], real_target[:min(batch_len, 32)]], dim = 0)
-    torchvision.utils.save_image(buf_save_imgs, f"{log_dir}/_e_{i + 1:03}.png", value_range=(-1.0, 1.0), normalize = True)
+    with open(path_log, mode="a") as f:
+        print(f"{gl_mean},{gl_bce},{gl_l1},{dl}", file=f)
 
-    # モデルの保存
-    # if 0 < i and i % 10 == 0:
-    #     torch.save(model_G.state_dict(), f"{log_dir}/_gen_{i:03}.pth")
-    #     torch.save(model_D.state_dict(), f"{log_dir}/_dis_{i:03}.pth") # こちらは基本的には使わない
+    vis_n = min(real_target.size(0), 32)
+    fake_vis = fake_target.detach()
+    buf_save_imgs = torch.cat([fake_vis[:vis_n], real_target[:vis_n]], dim=0)
+    torchvision.utils.save_image(buf_save_imgs, log_dir / f"_e_{i + 1:03}.png", value_range=(-1.0, 1.0), normalize=True)
 
-torch.save(model_G.state_dict(), f"{log_dir}/_gen_{cf.epochSize:03}.pth")
-print(f"done {time.time() - s_tm:.01f}s")
+    # L1による簡易ベスト保存
+    score = gl_l1 + 0.2 * gl_bce
+    if score < best_score:
+        best_score = score
+        best_epoch = i + 1
+        torch.save(model_G.state_dict(), log_dir / "best.pth")
+
+torch.save(model_G.state_dict(), log_dir / f"_gen_{cf.epochSize:03}.pth")
+torch.save(model_D.state_dict(), log_dir / f"_dis_{cf.epochSize:03}.pth")
+print(f"best epoch: {best_epoch}, score: {best_score:.4f}")
+print(f"done {time.time() - s_tm:.1f}s")

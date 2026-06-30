@@ -1,47 +1,115 @@
 import sys
 sys.dont_write_bytecode = True
-import numpy as np
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torchvision import models
 
-# 画像の一辺のサイズ (この大きさにリサイズされるので要確認)
+# 学習用の設定
 cellSize = 192
+epochSize = 10
+batchSize = 1
+dataset_size = 1000
 
-# 繰り返す回数
-epochSize = 200
+# モデルの設定
+in_channels = 1
+out_channels = 3
+base_channels = 32
+num_res_blocks = 2
+norm_type = "instance" # "batch" or "instance"
+use_amp = True
 
-# ミニバッチのサイズ
-batchSize = 24
+# 最適化関数の設定
+lr_g = 2e-4
+lr_d = 8e-5
+beta1 = 0.5
+beta2 = 0.999
 
-# データセットの数 (イテレーション数を求めたりするためにグローバルで使えるようにしておく)
-dataset_size = 0
+# 損失関数の設定
+lambda_l1 = 50.0 # 30〜100とか: 低いほど色はのりやすくなるがノイズとかも増える
+d_update_interval = 4 # 識別器の更新間隔(1〜10とか): 大きいほど学習は安定するが色ののりが悪くなる
+real_label_smooth = 0.9 # 学習安定化のため識別器の正解ラベルを少し下げる(0.7〜0.9とか)
+
+# 学習安定化 (データセットの数が少ない場合は有効)
+use_input_noise_for_d = True # 学習安定化のため識別器の入力にノイズを加える
+input_noise_std = 0.01
+
+def get_norm_layer(ch: int, norm: str):
+    if norm == "batch":
+        return nn.BatchNorm2d(ch)
+    elif norm == "instance":
+        return nn.InstanceNorm2d(ch, affine=True)
+    else:
+        raise ValueError(f"Unsupported norm type: {norm}")
+
+class ConvBlock(nn.Module):
+    def __init__(self, in_ch, out_ch, k=3, s=1, p=1, norm="instance", act="relu"):
+        super().__init__()
+        layers = [nn.Conv2d(in_ch, out_ch, kernel_size=k, stride=s, padding=p, bias=False)]
+        layers.append(get_norm_layer(out_ch, norm))
+        if act == "relu":
+            layers.append(nn.ReLU(inplace=True))
+        elif act == "lrelu":
+            layers.append(nn.LeakyReLU(0.2, inplace=True))
+        else:
+            raise ValueError(f"Unsupported act: {act}")
+        self.block = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.block(x)
+
+class ResBlock(nn.Module):
+    def __init__(self, ch, norm="instance"):
+        super().__init__()
+        self.conv1 = nn.Conv2d(ch, ch, kernel_size=3, stride=1, padding=1, bias=False)
+        self.norm1 = get_norm_layer(ch, norm)
+        self.conv2 = nn.Conv2d(ch, ch, kernel_size=3, stride=1, padding=1, bias=False)
+        self.norm2 = get_norm_layer(ch, norm)
+        self.act = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        identity = x
+        out = self.act(self.norm1(self.conv1(x)))
+        out = self.norm2(self.conv2(out))
+        out = self.act(out + identity)
+        return out
+
+class DownBlock(nn.Module):
+    def __init__(self, in_ch, out_ch, norm="instance"):
+        super().__init__()
+        self.block = ConvBlock(in_ch, out_ch, k=4, s=2, p=1, norm=norm, act="relu")
+
+    def forward(self, x):
+        return self.block(x)
+
+class UpBlock(nn.Module):
+    def __init__(self, in_ch, out_ch, norm="instance"):
+        super().__init__()
+        self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=False)
+        self.conv = ConvBlock(in_ch, out_ch, k=3, s=1, p=1, norm=norm, act="relu")
+
+    def forward(self, x):
+        return self.conv(self.up(x))
 
 class Generator(nn.Module):
-    def __init__(self):
+    def __init__(self, in_ch=in_channels, out_ch=out_channels, base_ch=base_channels,
+                 n_res=num_res_blocks, norm=norm_type):
         super().__init__()
-        self.enc1 = self.conv_bn_relu(3, 32, kernel_size=5) # 32x192x192
-        self.enc2 = self.conv_bn_relu(32, 64, kernel_size=3, pool_kernel=4)  # 64x48x48
-        self.enc3 = self.conv_bn_relu(64, 128, kernel_size=3, pool_kernel=2)  # 128x24x24
-        self.enc4 = self.conv_bn_relu(128, 256, kernel_size=3, pool_kernel=2)  # 256x12x12
-        self.enc5 = self.conv_bn_relu(256, 512, kernel_size=3, pool_kernel=2)  # 512x6x6
-        self.dec1 = self.conv_bn_relu(512, 256, kernel_size=3, pool_kernel=-2)  # 256x12x12
-        self.dec2 = self.conv_bn_relu(256 + 256, 128, kernel_size=3, pool_kernel=-2)  # 128x24x24
-        self.dec3 = self.conv_bn_relu(128 + 128, 64, kernel_size=3, pool_kernel=-2)  # 64x48x48
-        self.dec4 = self.conv_bn_relu(64 + 64, 32, kernel_size=3, pool_kernel=-4)  # 32x192x192
-        self.dec5 = nn.Sequential(nn.Conv2d(32 + 32, 3, kernel_size=5, padding=2), nn.Tanh())
+        self.enc1 = ConvBlock(in_ch, base_ch, k=5, s=1, p=2, norm=norm, act="relu")
+        self.enc2 = DownBlock(base_ch, base_ch * 2, norm=norm)
+        self.enc3 = DownBlock(base_ch * 2, base_ch * 4, norm=norm)
+        self.enc4 = DownBlock(base_ch * 4, base_ch * 8, norm=norm)
+        self.enc5 = DownBlock(base_ch * 8, base_ch * 8, norm=norm)
 
-    def conv_bn_relu(self, in_ch, out_ch, kernel_size=3, pool_kernel=None):
-        layers = []
-        if pool_kernel is not None:
-            if pool_kernel > 0: layers.append(nn.AvgPool2d(pool_kernel))
-            elif pool_kernel < 0: layers.append(nn.UpsamplingNearest2d(scale_factor=-pool_kernel))
-        layers.append(nn.Conv2d(in_ch, out_ch, kernel_size, padding=(kernel_size - 1) // 2))
-        layers.append(nn.BatchNorm2d(out_ch))
-        layers.append(nn.ReLU(inplace=True))
-        return nn.Sequential(*layers)
+        self.resblocks = nn.Sequential(*[ResBlock(base_ch * 8, norm=norm) for _ in range(n_res)])
+
+        self.dec1 = UpBlock(base_ch * 8, base_ch * 8, norm=norm)
+        self.dec2 = UpBlock(base_ch * 16, base_ch * 4, norm=norm)
+        self.dec3 = UpBlock(base_ch * 8, base_ch * 2, norm=norm)
+        self.dec4 = UpBlock(base_ch * 4, base_ch, norm=norm)
+        self.dec5 = nn.Sequential(
+            nn.Conv2d(base_ch * 2, out_ch, kernel_size=5, stride=1, padding=2),
+            nn.Tanh()
+        )
 
     def forward(self, x):
         x1 = self.enc1(x)
@@ -49,48 +117,39 @@ class Generator(nn.Module):
         x3 = self.enc3(x2)
         x4 = self.enc4(x3)
         x5 = self.enc5(x4)
-        out = self.dec1(x5)
-        out = self.dec2(torch.cat([out, x4], dim=1))
-        out = self.dec3(torch.cat([out, x3], dim=1))
-        out = self.dec4(torch.cat([out, x2], dim=1))
-        out = self.dec5(torch.cat([out, x1], dim=1))
+
+        b = self.resblocks(x5)
+
+        d1 = self.dec1(b)
+        d2 = self.dec2(torch.cat([d1, x4], dim=1))
+        d3 = self.dec3(torch.cat([d2, x3], dim=1))
+        d4 = self.dec4(torch.cat([d3, x2], dim=1))
+        out = self.dec5(torch.cat([d4, x1], dim=1))
         return out
 
-class Discriminator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.conv1 = self.conv_bn_relu(6, 16, kernel_size=5) # fake/true target + src
-        self.conv2 = self.conv_bn_relu(16, 32, pool_kernel=4)
-        self.conv3 = self.conv_bn_relu(32, 64, pool_kernel=2)
-        self.conv4 = self.conv_bn_relu(64, 128, pool_kernel=2)
-        # self.conv5 = self.conv_bn_relu(128, 256, pool_kernel=2)
-        # self.conv6 = self.conv_bn_relu(256, 512, pool_kernel=2)
-        # self.out_patch = nn.Conv2d(512, 1, kernel_size=1) #1x3x3
-        self.out_patch = nn.Conv2d(128, 1, kernel_size=1) #1x3x3
 
-    def conv_bn_relu(self, in_ch, out_ch, kernel_size=3, pool_kernel=None, reps=2):
-        layers = []
-        for i in range(reps):
-            if i == 0 and pool_kernel is not None:
-                layers.append(nn.AvgPool2d(pool_kernel))
-            layers.append(nn.Conv2d(in_ch if i == 0 else out_ch, out_ch, kernel_size, padding=(kernel_size - 1) // 2))
-            layers.append(nn.BatchNorm2d(out_ch))
-            layers.append(nn.LeakyReLU(0.2, inplace=True))
-        return nn.Sequential(*layers)
+class Discriminator(nn.Module):
+    """PatchGAN discriminator"""
+    def __init__(self, in_ch=4, base_ch=64, norm=norm_type):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Conv2d(in_ch, base_ch, kernel_size=4, stride=2, padding=1),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.Conv2d(base_ch, base_ch * 2, kernel_size=4, stride=2, padding=1, bias=False),
+            get_norm_layer(base_ch * 2, norm),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.Conv2d(base_ch * 2, base_ch * 4, kernel_size=4, stride=2, padding=1, bias=False),
+            get_norm_layer(base_ch * 4, norm),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.Conv2d(base_ch * 4, base_ch * 8, kernel_size=4, stride=1, padding=1, bias=False),
+            get_norm_layer(base_ch * 8, norm),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.Conv2d(base_ch * 8, 1, kernel_size=4, stride=1, padding=1)
+        )
 
     def forward(self, x):
-        # out = self.conv6(self.conv5(self.conv4(self.conv3(self.conv2(self.conv1(x))))))
-        out = self.conv4(self.conv3(self.conv2(self.conv1(x))))
-        return self.out_patch(out)
-
-
-if __name__ == "__main__":
-    from torchsummary import summary
-    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    mdl_gen = Generator().to(DEVICE)
-    print(mdl_gen)
-    summary(mdl_gen, (3, cellSize, cellSize))
-
-    mdl_dis = Discriminator().to(DEVICE)
-    print(mdl_dis)
-    summary(mdl_dis, (6, cellSize, cellSize))
+        return self.net(x)

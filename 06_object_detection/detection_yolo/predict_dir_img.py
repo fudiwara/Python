@@ -32,7 +32,7 @@ for f in range(len(fileList)):
         p1 = (int(x1), int(y1))
         cv.rectangle(img, p0, p1, (0, 255, 0), 2) # 検出結果の矩形描画
 
-        info_text = f"{classes[i]} {scores[i]:.2f}"
+        info_text = f"{int(classes[i])} {scores[i]:.2f}"
         cv.putText(img, info_text, (int(x0), int(y0) - 6), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1)
     
     output_filename = f"{image_path.stem}_det.png"

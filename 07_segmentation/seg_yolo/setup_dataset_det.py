@@ -1,3 +1,5 @@
+# YOLO用のデータセット構成をシンボリックリンクで作成するモジュール
+# 画像とTXTファイルが一つのディレクトリにまとめっていることを前提とする
 import sys, os
 sys.dont_write_bytecode = True
 import random

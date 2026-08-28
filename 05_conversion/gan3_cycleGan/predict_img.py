@@ -1,4 +1,4 @@
-# python pred_1img.py モデルファイル名 画像ファイル名
+# python pred_img.py モデルファイル名 画像ファイル名
 import sys
 sys.dont_write_bytecode = True
 import numpy as np

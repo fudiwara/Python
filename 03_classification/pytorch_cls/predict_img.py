@@ -1,10 +1,10 @@
 import sys
 sys.dont_write_bytecode = True
 import torch
-import numpy as np
-import config as cf
-
 import cv2 as cv
+import numpy as np
+
+import config as cf
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(DEVICE)

@@ -13,7 +13,7 @@ image_dir_path = pathlib.Path(sys.argv[2]) # 入力画像が入っているデ�
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval").to(DEVICE)
-model.load_state_dict(torch.load(model_path, map_location = DEVICE, weights_only = False))
+model.load_state_dict(torch.load(model_path, map_location = DEVICE, weights_only = True))
 model.eval()
 
 IMG_EXTS = [".jpg", ".jpeg", ".png", ".bmp"] # 処理対象の拡張子

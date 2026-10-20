@@ -1,7 +1,6 @@
 import sys, os, time
 sys.dont_write_bytecode = True
 import torch
-import torchvision.transforms as T
 import cv2 as cv
 import numpy as np
 from PIL import Image
@@ -17,7 +16,6 @@ image_dir_path = pathlib.Path(sys.argv[2]) # テスト画像が入っている�
 annotations_path = sys.argv[3] # アノテーションファイルへのフルパス(上のフォルダに依存しない)
 output_dir = pathlib.Path(sys.argv[4]) # 画像を保存するフォルダ
 output_dir.mkdir(parents = True, exist_ok = True) # ディレクトリ生成
-np.set_printoptions(precision=3, suppress=True) # 指数表現をやめて小数点以下の桁数を指定する
 
 # フォントと枠の設定
 font_scale = cv.getFontScaleFromHeight(cv.FONT_HERSHEY_DUPLEX, 11, 1)
@@ -90,8 +88,6 @@ else: model.load_state_dict(torch.load(model_path, torch.device("cpu")))
 model.to(DEVICE)
 model.eval()
 
-data_transforms = T.Compose([T.ToTensor()])
-
 proc_time = []
 det_just_num, det_over_num, det_not_num, vals_iou = [], [], [], []
 for idx in range(len(image_filenames)):
@@ -101,7 +97,7 @@ for idx in range(len(image_filenames)):
     # 画像の読み込み・変換
     img = Image.open(file_name).convert("RGB") # カラー指定で開く
     i_w, i_h = img.size
-    data = data_transforms(img)
+    data = cf.transforms_eval(img)
     data = data.unsqueeze(0) # テンソルに変換してから1次元追加
     s_tm = time.time()
 

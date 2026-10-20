@@ -2,7 +2,6 @@ import sys, time
 sys.dont_write_bytecode = True
 import torch
 from torch import nn
-import torchvision.transforms as T
 import cv2 as cv
 from PIL import Image
 import numpy as np
@@ -19,11 +18,9 @@ cap = cv.VideoCapture(cam_num)
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")
-if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = False))
-else: model.load_state_dict(torch.load(model_path, torch.device("cpu"), weights_only = False))
+if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = True))
+else: model.load_state_dict(torch.load(model_path, torch.device("cpu"), weights_only = True))
 model.to(DEVICE).eval()
-
-data_transforms = T.Compose([T.ToTensor()])
 
 # フォントと枠の設定
 font_scale = cv.getFontScaleFromHeight(cv.FONT_HERSHEY_DUPLEX, 11, 1)
@@ -41,7 +38,7 @@ while True:
     if ret: # 読み込めた場合に処理をする
     # if False:
         img = Image.fromarray(cv.cvtColor(frame, cv.COLOR_BGR2RGB)) # OpenCV形式からPIL形式へ変換
-        data = data_transforms(img)
+        data = cf.transforms_eval(img)
         data = data.unsqueeze(0) # テンソルに変換してから1次元追加
 
         data = data.to(DEVICE)

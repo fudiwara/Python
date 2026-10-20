@@ -2,12 +2,16 @@ import sys, math
 sys.dont_write_bytecode = True
 import torch
 import torchvision
+from torchvision.transforms import v2 as T
 
 # 繰り返す回数
 epochSize = 20
 
 # 学習時のバッチのサイズ
 batchSize = 4
+
+# 勾配累積ステップ数
+accumulationSteps = 3
 
 # カテゴリの総数 (背景の0を含めた合計)
 numClasses = 2
@@ -17,6 +21,21 @@ thDetection = 0.6
 
 # データセットを学習用と評価用に分割する際の割合
 splitRateTrain = 0.8
+
+transforms_train = T.Compose([
+    T.ToImage(), # PIL、Tensor、NumPy のいずれの入力も可
+    T.RandomHorizontalFlip(0.5),
+    T.RandomRotation(degrees = 5), # box は回転後の外接矩形になる
+    T.RandomApply([T.GaussianBlur(5, sigma = (0.1, 2.0))], p = 0.3),
+    T.ColorJitter(brightness = 0.2, contrast = 0.2, saturation = 0.1, hue = 0),
+    T.ToDtype(torch.float32, scale = True), # 画像のみ変換される (maskはuint8のまま)
+    T.SanitizeBoundingBoxes(), # 潰れた box と対応する label / mask を除去
+])
+
+transforms_eval = T.Compose([
+    T.ToImage(), # PIL、Tensor、NumPy のいずれの入力も可
+    T.ToDtype(torch.float32, scale = True),
+])
 
 def build_model(sw_train_eval):
     if sw_train_eval == "train":

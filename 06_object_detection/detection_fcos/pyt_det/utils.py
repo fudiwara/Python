@@ -51,7 +51,7 @@ class SmoothedValue:
 
     @property
     def global_avg(self):
-        return self.total / self.count
+        return self.total / self.count if self.count != 0 else 0
 
     @property
     def max(self):
@@ -121,7 +121,6 @@ class MetricLogger:
                 v = v.item()
             assert isinstance(v, (float, int))
             self.meters[k].update(v)
-            break # lossだけの表示にするために途中で終わらせる
 
     def __getattr__(self, attr):
         if attr in self.meters:
@@ -133,7 +132,8 @@ class MetricLogger:
     def __str__(self):
         loss_str = []
         for name, meter in self.meters.items():
-            loss_str.append(f"{name}: {str(meter)}")
+            if name in ["loss", "lr"]: # コンソール表示を限定する
+                loss_str.append(f"{name}: {str(meter)}")
         return self.delimiter.join(loss_str)
 
     def synchronize_between_processes(self):

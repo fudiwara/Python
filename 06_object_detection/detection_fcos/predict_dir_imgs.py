@@ -2,7 +2,6 @@ import sys, os, time
 sys.dont_write_bytecode = True
 import torch
 from torch import nn
-import torchvision.transforms as T
 import cv2 as cv
 import numpy as np
 from PIL import Image
@@ -26,13 +25,12 @@ clr_num = len(colors)
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")
-if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = False))
-else: model.load_state_dict(torch.load(model_path, torch.device("cpu"), weights_only = False))
+if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = True))
+else: model.load_state_dict(torch.load(model_path, torch.device("cpu"), weights_only = True))
 model.to(DEVICE).eval()
-data_transforms = T.Compose([T.ToTensor()])
 
 exts = [".jpg", ".png", ".jpeg"] # 処理対象の拡張子
-fileList = sorted([p for p in image_dir_path.glob("**/*") if p.suffix.lower()  in exts])
+fileList = sorted([p for p in image_dir_path.glob("**/*") if p.suffix.lower() in exts])
 
 proc_time = []
 for f in range(len(fileList)):
@@ -43,7 +41,7 @@ for f in range(len(fileList)):
     # 画像の読み込み・変換
     img = Image.open(image_path).convert("RGB") # カラー指定で開く
     i_w, i_h = img.size
-    data = data_transforms(img).unsqueeze(0) # テンソルに変換してから1次元追加
+    data = cf.transforms_eval(img).unsqueeze(0) # テンソルに変換してから1次元追加
 
     data = data.to(DEVICE)
     with torch.no_grad(): # 推定のために勾配計算の無効化モードで

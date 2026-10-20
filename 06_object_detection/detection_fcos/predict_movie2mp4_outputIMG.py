@@ -22,11 +22,9 @@ output_path.mkdir(parents = True, exist_ok = True) # ディレクトリ生成
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")
-if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = False))
-else: model.load_state_dict(torch.load(model_path, torch.device("cpu"), weights_only = False))
+if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = True))
+else: model.load_state_dict(torch.load(model_path, torch.device("cpu"), weights_only = True))
 model.to(DEVICE).eval()
-
-data_transforms = torchvision.transforms.Compose([torchvision.transforms.ToTensor()])
 
 # フォント、枠の設定
 font_scale = cv.getFontScaleFromHeight(cv.FONT_HERSHEY_DUPLEX, 11, 1)
@@ -52,7 +50,7 @@ for f in range(frame_count):
     if not ret: continue
     src_img = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
     img = Image.fromarray(src_img) # OpenCV形式からPIL形式へ変換
-    data = data_transforms(img).unsqueeze(0) # テンソルに変換してから1次元追加
+    data = cf.transforms_eval(img).unsqueeze(0) # テンソルに変換してから1次元追加
     data = data.to(DEVICE)
     with torch.no_grad(): # 推定のために勾配計算の無効化モードで
         outputs = model(data) # 推定処理

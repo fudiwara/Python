@@ -1,11 +1,8 @@
-import sys, os
+import sys, os, pathlib
 sys.dont_write_bytecode = True
 import torch
-import torchvision.transforms as T
 import cv2 as cv
 import numpy as np
-from PIL import Image
-import pathlib
 
 import config as cf
 
@@ -14,7 +11,6 @@ print(DEVICE)
 model_path = sys.argv[1] # モデルのパス
 image_path = sys.argv[2] # 入力画像のパス
 file_name = pathlib.Path(sys.argv[2])
-np.set_printoptions(precision = 3, suppress = True) # 指数表現をやめて小数点以下の桁数を指定する
 
 # フォントと枠の設定
 font_scale = cv.getFontScaleFromHeight(cv.FONT_HERSHEY_DUPLEX, 11, 1)
@@ -23,16 +19,14 @@ clr_num = len(colors)
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
 model = cf.build_model("eval")
-if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = False))
-else: model.load_state_dict(torch.load(model_path, torch.device("cpu"), weights_only = False))
+if DEVICE == "cuda": model.load_state_dict(torch.load(model_path, weights_only = True))
+else: model.load_state_dict(torch.load(model_path, torch.device("cpu"), weights_only = True))
 model.to(DEVICE).eval()
 
-data_transforms = T.Compose([T.ToTensor()])
-
 # 画像の読み込み・変換
-img = Image.open(image_path).convert("RGB") # カラー指定で開く
-i_w, i_h = img.size
-data = data_transforms(img).unsqueeze(0).to(DEVICE) # テンソルに変換してから1次元追加
+img = cv.imread(image_path) # デフォルトのカラー指定で開く
+i_w, i_h = img.shape[1], img.shape[0]
+data = cf.transforms_eval(img).unsqueeze(0).to(DEVICE) # テンソルに変換してから1次元追加
 
 with torch.no_grad(): # 推定のために勾配計算の無効化モードで
     outputs = model(data) # 推定処理
@@ -42,7 +36,6 @@ scores = outputs[0]["scores"].detach().cpu().numpy()
 labels = outputs[0]["labels"].detach().cpu().numpy()
 # print(bboxs, scores, labels)
 
-img = cv.cvtColor(np.array(img, dtype = np.uint8), cv.COLOR_RGB2BGR)
 for i in range(len(scores)):
     b = bboxs[i] # 入力画像のスケールの座標
     # print(b)

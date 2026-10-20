@@ -47,12 +47,11 @@ def calc_acc(output, label): # 結果が一致するラベルの数をカウン�
     return torch.sum(label == p_arg)
 
 class build_model(nn.Module):
-    def __init__(self, sw_train_eval):
+    def __init__(self, sw_train):
         super().__init__()
-        pretrained = (sw_train_eval == "train")
         self.model = timm.create_model(
             "mobilenetv3_large_100.ra_in1k", # 実際に使う場合はEfficientNetV2等も検討すること
-            pretrained = pretrained,
+            pretrained = sw_train,
             num_classes = classesSize
         )
 

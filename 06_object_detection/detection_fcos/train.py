@@ -16,8 +16,8 @@ output_dir = pathlib.Path("_log_" + id_str) # 保存用ディレクトリ
 output_dir.mkdir(parents = True, exist_ok = True) # ディレクトリ生成
 
 # 作成したカスタム・データセット
-train_dataset = ld.annotation_yolotxt_det(img_dir_path, ld.get_transform(train=True))
-val_dataset = ld.annotation_yolotxt_det(img_dir_path, ld.get_transform(train=False))
+train_dataset = ld.annotation_yolotxt_det(img_dir_path, cf.transforms_train)
+val_dataset = ld.annotation_yolotxt_det(img_dir_path, cf.transforms_eval)
 
 # データセットを訓練セットとテストセットに分割
 # torch.manual_seed(1)
@@ -33,14 +33,26 @@ val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=in
 
 # モデル、損失関数、最適化関数、収束率の定義
 model = cf.build_model("train").to(DEVICE)
-params = [p for p in model.parameters() if p.requires_grad]
-optimizer = torch.optim.SGD(params, lr=0.005, momentum=0.9, weight_decay=0.0005)
-lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=cf.epochSize, eta_min=0.0001)
+optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-2)
 
-with open(path_log, mode = "w") as f: print(f"epoch,loss,cls,reg,center,map,f1,lr", file = f)
+num_iters_per_epoch = len(train_loader) # 学習サンプル数 / バッチサイズ
+total_iters = cf.epochSize * num_iters_per_epoch # 全イテレーション数
+warmup_iters = num_iters_per_epoch  # 最初の1エポック分をWarmupとする
+
+warmup_scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=0.001, total_iters=warmup_iters)
+main_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_iters - warmup_iters, eta_min=1e-6)
+lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
+    optimizer,
+    schedulers=[warmup_scheduler, main_scheduler],
+    milestones=[warmup_iters]
+)
+
+scaler = torch.amp.GradScaler("cuda") # 自動混合精度の利用
+
+with open(path_log, mode = "w") as f: print(f"epoch,lr,loss,cls,reg,center,map,f1", file = f)
 s_tm = time.time()
 for epoch in range(cf.epochSize):
-    metric_logger = train_one_epoch(model, optimizer, train_loader, DEVICE, epoch, print_freq=1) # 学習
+    metric_logger = train_one_epoch(model, optimizer, train_loader, lr_scheduler, DEVICE, epoch, 1, scaler = scaler) # 学習
     l_total = metric_logger.meters["loss"].global_avg
     l_cls = metric_logger.meters["classification"].global_avg
     l_reg = metric_logger.meters["bbox_regression"].global_avg
@@ -53,7 +65,7 @@ for epoch in range(cf.epochSize):
     # torch.save(model.state_dict(), f"{output_dir}/_m_{id_str}_{epoch + 1:03}.pth")
 
     # 学習の状況をCSVに保存
-    with open(path_log, mode = "a") as f: print(f"{epoch+1},{l_total:.6f},{l_cls:.6f},{l_reg:.6f},{l_center:.6f},{val_map:.6f},{val_f1:.6f},{curr_lr:.8f}", file = f)
+    with open(path_log, mode = "a") as f: print(f"{epoch+1},{curr_lr:.8f},{l_total:.6f},{l_cls:.6f},{l_reg:.6f},{l_center:.6f},{val_map:.6f},{val_f1:.6f}", file = f)
 
 torch.save(model.state_dict(), f"{output_dir}/_m_{id_str}_{cf.epochSize:03}.pth")
 print("done %.0fs" % (time.time() - s_tm))

@@ -7,17 +7,8 @@ from PIL import Image, ImageDraw
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-import pyt_det.transforms as T
-
 def collate_fn(batch):
     return tuple(zip(*batch))
-
-def get_transform(train):
-    transforms = []
-    transforms.append(T.PILToTensor()) # PIL imageをPyTorch Tensorに変換
-    transforms.append(T.ConvertImageDtype(torch.float))
-    if train: transforms.append(T.RandomHorizontalFlip(0.5)) # 訓練中はランダムで水平に反転
-    return T.Compose(transforms)
 
 def yolo_to_xyxy(xc, yc, w, h, img_w, img_h):
     # xc, yc, w, h は正規化値(0..1)
@@ -106,8 +97,8 @@ class annotation_yolotxt_det(Dataset):
 
 if __name__ == "__main__":
     data_path = pathlib.Path(sys.argv[1])
-    train_dataset = annotation_yolotxt_det(data_path, get_transform(train=True))
-    val_dataset = annotation_yolotxt_det(data_path, get_transform(train=False))
+    train_dataset = annotation_yolotxt_det(data_path, cf.transforms_train)
+    val_dataset = annotation_yolotxt_det(data_path, cf.transforms_eval)
 
     indices = torch.randperm(len(train_dataset)).tolist()
     train_data_size = int(0.8 * len(indices))

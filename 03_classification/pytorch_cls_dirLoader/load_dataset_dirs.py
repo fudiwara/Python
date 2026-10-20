@@ -35,7 +35,7 @@ class ImageFolder_directory(Dataset):
     def __getitem__(self, idx):
         real_idx = self.indices[idx]
         img_path = self.paths[real_idx]
-        img = cv.cvtColor(cv.imread(str(img_path)), cv.COLOR_BGR2RGB)
+        img = cv.cvtColor(cv.imread(img_path), cv.COLOR_BGR2RGB)
 
         img = self.transform(img)
         return img, self.labels[real_idx]

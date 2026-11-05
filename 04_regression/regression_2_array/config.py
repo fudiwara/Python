@@ -59,7 +59,7 @@ class build_model(torch.nn.Module):
         pretrained = (sw_train_eval == "train")
         
         self.model = timm.create_model(
-            "mobilenetv3_large_100.ra_in1k", # 実際に使う場合はEfficientNetV2等も検討すること
+            "mobilenetv4_hybrid_medium.e200_r256_in12k_ft_in1k", # 実際に使う場合はConvNeXt等も検討すること
             pretrained = pretrained,
             num_classes = 0
         )

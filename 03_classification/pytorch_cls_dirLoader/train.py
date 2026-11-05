@@ -35,7 +35,7 @@ train_loader = DataLoader(train_dataset, batch_size = cf.batchSize, num_workers 
 val_loader = DataLoader(val_dataset, batch_size = cf.batchSize, num_workers = os.cpu_count())
 
 # モデル、損失関数、最適化関数、収束率の定義
-model = cf.build_model("train").to(DEVICE)
+model = cf.BuildModel("train").to(DEVICE)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.AdamW(model.parameters(), lr = 0.0001, weight_decay = 1e-8)
 

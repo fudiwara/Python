@@ -51,6 +51,7 @@ scaler = torch.amp.GradScaler("cuda") # 自動混合精度の利用
 
 with open(path_log, mode = "w") as f: print(f"epoch,lr,loss,cls,reg,center,map,f1", file = f)
 s_tm = time.time()
+best_f1 = 0.0
 for epoch in range(cf.epochSize):
     metric_logger = train_one_epoch(model, optimizer, train_loader, lr_scheduler, DEVICE, epoch, 1, scaler = scaler) # 学習
     l_total = metric_logger.meters["loss"].global_avg
@@ -59,10 +60,11 @@ for epoch in range(cf.epochSize):
     l_center = metric_logger.meters["bbox_ctrness"].global_avg
     curr_lr = optimizer.param_groups[0]["lr"]
 
-    lr_scheduler.step() # 学習率の更新
     val_map, val_f1 = evaluate(model, val_loader, device = DEVICE) # テストデータセットの評価
-    # 毎エポックモデルの保存する場合 (とりあえずコメントアウト)
-    # torch.save(model.state_dict(), f"{output_dir}/_m_{id_str}_{epoch + 1:03}.pth")
+    
+    if best_f1 < val_f1: # F1の更新があった場合にモデルの保存
+        best_f1 = val_f1
+        torch.save(model.state_dict(), output_dir / f"best.pth")
 
     # 学習の状況をCSVに保存
     with open(path_log, mode = "a") as f: print(f"{epoch+1},{curr_lr:.8f},{l_total:.6f},{l_cls:.6f},{l_reg:.6f},{l_center:.6f},{val_map:.6f},{val_f1:.6f}", file = f)

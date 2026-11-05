@@ -18,11 +18,10 @@ cap.set(cv.CAP_PROP_FRAME_HEIGHT, ch)
 print(cw, ch)
 
 options = mp.tasks.vision.ImageSegmenterOptions( # セグメンテーションのオプション
-    base_options = mp.tasks.BaseOptions(model_asset_path = "models/selfie_multiclass_256x256.tflite"), # 人の他クラス用
-    # base_options = mp.tasks.BaseOptions(model_asset_path = "deeplab_v3.tflite"), # VOCカテゴリ用
+    base_options = mp.tasks.BaseOptions(model_asset_path = "models/selfie_multiclass_256x256.tflite"), # 人の多クラス用
     output_category_mask = True)
 segmenter = mp.tasks.vision.ImageSegmenter.create_from_options(options) # 推定器の初期化
-num_categories = 6 # selfie_multiclass_256x256.tflite の場合は6
+
 color_map = np.array([
     (0, 0, 0),       # 背景 (黒)
     (0, 0, 255),     # 髪 (青)

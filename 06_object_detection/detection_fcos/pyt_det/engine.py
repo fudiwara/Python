@@ -45,8 +45,6 @@ def train_one_epoch(model, optimizer, data_loader, lr_scheduler, device, epoch, 
         
         # ステップ回もしくは最終バッチで重み更新
         is_accumulating = (i + 1) % cf.accumulationSteps != 0 and (i + 1) != len(data_loader)
-        
-        
         if not is_accumulating:
             if scaler is not None:
                 scaler.step(optimizer)

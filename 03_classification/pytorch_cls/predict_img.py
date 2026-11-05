@@ -12,7 +12,7 @@ model_path = sys.argv[1] # モデルのパス
 image_path = sys.argv[2] # 推定する画像のパス
 
 # モデルの定義と読み込みおよび評価用のモードにセットする
-model = cf.build_model("eval").to(DEVICE)
+model = cf.BuildModel("eval").to(DEVICE)
 model.load_state_dict(torch.load(model_path, map_location = DEVICE, weights_only = True))
 model.eval()
 

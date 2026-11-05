@@ -48,7 +48,7 @@ def calc_acc(output, label): # 結果が一致するラベルの数をカウン�
     p_arg = torch.argmax(output, dim = 1)
     return torch.sum(label == p_arg)
 
-class build_model(nn.Module):
+class BuildModel(nn.Module):
     def __init__(self, sw_train_eval):
         super().__init__()
         pretrained = (sw_train_eval == "train")
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     print(DEVICE)
 
-    mdl = build_model("train").to(DEVICE)
+    mdl = BuildModel("train").to(DEVICE)
     print(mdl)
     summary(mdl, (batchSize, 3, cellSize, cellSize))
     
